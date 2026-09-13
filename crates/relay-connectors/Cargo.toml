@@ -1,0 +1,42 @@
+[package]
+name = "relay-connectors"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Native in-process connectors (GitHub, PostgreSQL, Filesystem) for Relay"
+
+[dependencies]
+relay-domain = { workspace = true }
+relay-canonical = { workspace = true }
+relay-policy = { workspace = true }
+relay-credentials = { workspace = true }
+relay-receipts = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time"] }
+tracing = { workspace = true }
+chrono = { workspace = true }
+tokio-postgres = { workspace = true }
+postgres-types = { workspace = true }
+postgres_rustls = { workspace = true }
+rustls = { workspace = true }
+webpki-roots = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tokio-postgres = { workspace = true }
+relay-canonical = { workspace = true }
+relay-domain = { workspace = true }
+relay-receipts = { workspace = true }
+wiremock = { workspace = true }
+tempfile = { workspace = true }
+tracing-subscriber = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
+relay-policy = { workspace = true }
+relay-ledger = { workspace = true }

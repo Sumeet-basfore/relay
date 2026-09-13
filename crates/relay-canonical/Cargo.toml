@@ -1,0 +1,24 @@
+[package]
+name = "relay-canonical"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "RFC 8785 JSON Canonicalization Scheme (JCS) and domain AST normalizers for Relay"
+
+[dependencies]
+relay-domain = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_jcs = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+sqlparser = { workspace = true }
+chrono = { workspace = true }
+libc = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tempfile = { workspace = true }
+

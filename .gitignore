@@ -1,0 +1,15 @@
+# Rust build artifacts
+/target
+
+# Local runtime data and databases
+.relay/
+*.db
+*.db-wal
+*.db-shm
+
+# Agent & IDE metadata
+.serena/
+.vscode/
+.idea/
+*.swp
+*.bak

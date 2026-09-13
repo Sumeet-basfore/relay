@@ -1,0 +1,189 @@
+// Relay Cedar Schema (relay_schema.cedarschema)
+// Defines strongly typed PARC entities, actions, and execution context for Relay MCP Gateway.
+
+namespace Relay {
+    // -------------------------------------------------------------------------
+    // Entity Declarations
+    // -------------------------------------------------------------------------
+
+    entity Agent = {
+        agent_id?: String,
+        session_id?: String,
+    };
+
+    entity File = {
+        path?: String,
+        environment?: String,
+    };
+
+    entity Table = {
+        name?: String,
+        environment?: String,
+    };
+
+    entity Repository = {
+        name?: String,
+        environment?: String,
+    };
+
+    entity Resource = {
+        uri?: String,
+        environment?: String,
+    };
+
+    // -------------------------------------------------------------------------
+    // Context Declaration
+    // -------------------------------------------------------------------------
+
+    type ActionContext = {
+        path?: String,
+        query?: String,
+        table?: String,
+        repo?: String,
+        working_directory?: String,
+        schema_digest?: String,
+        action_hash?: String,
+        tool?: String,
+        operation?: String,
+        is_destructive?: Bool,
+    };
+
+    // -------------------------------------------------------------------------
+    // Action Declarations
+    // -------------------------------------------------------------------------
+
+    // Filesystem Actions
+    action "fs.read" appliesTo {
+        principal: [Agent],
+        resource: [File, Resource],
+        context: ActionContext,
+    };
+
+    action "fs.write" appliesTo {
+        principal: [Agent],
+        resource: [File, Resource],
+        context: ActionContext,
+    };
+
+    action "fs.delete" appliesTo {
+        principal: [Agent],
+        resource: [File, Resource],
+        context: ActionContext,
+    };
+
+    action "fs.read_file" appliesTo {
+        principal: [Agent],
+        resource: [File, Resource],
+        context: ActionContext,
+    };
+
+    action "fs.write_file" appliesTo {
+        principal: [Agent],
+        resource: [File, Resource],
+        context: ActionContext,
+    };
+
+    action "fs.delete_file" appliesTo {
+        principal: [Agent],
+        resource: [File, Resource],
+        context: ActionContext,
+    };
+
+    // Database / PostgreSQL Actions
+    action "postgres.read" appliesTo {
+        principal: [Agent],
+        resource: [Table, Resource],
+        context: ActionContext,
+    };
+
+    action "postgres.write" appliesTo {
+        principal: [Agent],
+        resource: [Table, Resource],
+        context: ActionContext,
+    };
+
+    action "postgres.ddl" appliesTo {
+        principal: [Agent],
+        resource: [Table, Resource],
+        context: ActionContext,
+    };
+
+    action "postgres.query" appliesTo {
+        principal: [Agent],
+        resource: [Table, Resource],
+        context: ActionContext,
+    };
+
+    action "db.drop_table" appliesTo {
+        principal: [Agent],
+        resource: [Table, Resource],
+        context: ActionContext,
+    };
+
+    action "db.truncate_table" appliesTo {
+        principal: [Agent],
+        resource: [Table, Resource],
+        context: ActionContext,
+    };
+
+    // GitHub Actions
+    action "github.read" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.write" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.get_repository" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.get_pull_request" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.get_issue" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.get_branch" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.create_issue" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.create_pull_request" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.create_branch" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+
+    action "github.delete_repository" appliesTo {
+        principal: [Agent],
+        resource: [Repository, Resource],
+        context: ActionContext,
+    };
+}

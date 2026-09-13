@@ -1,0 +1,94 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/relay-domain",
+    "crates/relay-canonical",
+    "crates/relay-policy",
+    "crates/relay-credentials",
+    "crates/relay-receipts",
+    "crates/relay-connectors",
+    "crates/relay-mcp",
+    "crates/relay-ledger",
+    "crates/relay-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.78"
+authors = ["Relay Security Architects <security@relay.dev>"]
+license = "Apache-2.0"
+repository = "https://github.com/relay-security/relay"
+
+[workspace.dependencies]
+# Internal Workspace Crates
+relay-domain = { path = "crates/relay-domain" }
+relay-canonical = { path = "crates/relay-canonical" }
+relay-policy = { path = "crates/relay-policy" }
+relay-credentials = { path = "crates/relay-credentials" }
+relay-receipts = { path = "crates/relay-receipts" }
+relay-connectors = { path = "crates/relay-connectors" }
+relay-mcp = { path = "crates/relay-mcp" }
+relay-ledger = { path = "crates/relay-ledger" }
+
+# Serialization & Canonicalization
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc", "raw_value", "preserve_order"] }
+serde_jcs = { version = "0.1" }
+sqlparser = { version = "0.47", default-features = false, features = ["std"] }
+
+# Error Handling & Async Trait
+thiserror = { version = "1.0" }
+async-trait = { version = "0.1" }
+
+# Cedar Policy Engine
+cedar-policy = { version = "4.0", default-features = false }
+
+# Async & Networking
+tokio = { version = "1.38", default-features = false }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+wiremock = { version = "0.6" }
+
+# Cryptography & Memory Security
+ed25519-dalek = { version = "2.1", default-features = false, features = ["rand_core", "serde", "zeroize"] }
+sha2 = { version = "0.10" }
+base64 = { version = "0.22" }
+zeroize = { version = "1.8", default-features = false, features = ["derive", "alloc"] }
+secrecy = { version = "0.8", default-features = false, features = ["serde", "alloc"] }
+keyring = { version = "3.2", default-features = false, features = ["sync-secret-service", "apple-native", "windows-native", "crypto-rust", "linux-native"] }
+rand_core = { version = "0.6", default-features = false, features = ["std"] }
+hex = { version = "0.4" }
+
+# Database & Storage
+rusqlite = { version = "0.31", default-features = false, features = ["bundled", "backup", "hooks"] }
+tokio-postgres = { version = "0.7", default-features = false, features = ["runtime", "with-chrono-0_4", "with-serde_json-1"] }
+postgres-types = { version = "0.2", features = ["with-serde_json-1", "with-chrono-0_4"] }
+postgres_rustls = { version = "0.1", default-features = false, features = ["runtime"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = { version = "0.26" }
+
+# CLI, Configuration & Telemetry
+clap = { version = "4.5", default-features = false, features = ["std", "derive", "env", "help", "usage", "error-context"] }
+toml = { version = "0.8", default-features = false, features = ["parse", "display"] }
+uuid = { version = "1.9", default-features = false, features = ["v7", "serde", "std", "rng"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+tracing = { version = "0.1", default-features = false, features = ["std", "attributes"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt", "json", "ansi"] }
+regex = { version = "1.10", default-features = false, features = ["std", "perf", "unicode-case"] }
+color-eyre = { version = "0.6" }
+libc = { version = "0.2" }
+
+# Test Dependencies
+proptest = { version = "1.5" }
+tempfile = { version = "3.10" }
+assert_cmd = { version = "2.0" }
+predicates = { version = "3.1" }
+testcontainers = { version = "0.23" }
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
