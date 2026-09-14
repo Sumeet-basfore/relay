@@ -1,206 +1,240 @@
 # Relay
 
-**A local-first, zero-trust MCP Security Gateway and Credential Broker for AI agents.**
+**A local-first, zero-trust security gateway and credential broker for AI agents.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Security Policy](https://img.shields.io/badge/security-policy-green.svg)](SECURITY.md)
-[![Status](https://img.shields.io/badge/status-Release%20Candidate%20(v0.1.0)-success.svg)](docs/release/RC002-release-report.md)
+[![Tests](https://img.shields.io/badge/tests-380%20passed-brightgreen.svg)](crates/)
 
 ---
 
-## 1. What is Relay?
+## Why Relay?
 
-Relay is a lightweight, standalone Rust binary that interposes between AI agents (e.g., Claude, Cursor, custom agent loops) and Model Context Protocol (MCP) tools.
+When you give an AI agent access to Model Context Protocol (MCP) tools, standard setups hand the agent raw API tokens (`GITHUB_TOKEN`, `DATABASE_URL`, SSH keys) and allow direct subprocess execution.
 
-Relay enforces a hard, deterministic security boundary:
-1. **Deterministic Cedar Authorization:** Authorizes tool actions with formal AWS Cedar policies rather than probabilistic LLM heuristics.
-2. **Ambient Credential Elimination:** Completely prevents target API tokens, database credentials, and private keys from entering agent context windows, disk files, or subprocess memory.
-3. **Cryptographic Action Receipts:** Produces signed RFC 9598 DSSE / in-toto v1.0 attestations for every executed action, recorded in an append-only SQLite hash-chain ledger.
-4. **Local Security Console:** Real-time visibility into security posture, governed action lifecycles, Cedar policies, and in-browser cryptographic verification via `relay ui`.
+If the agent encounters an **indirect prompt injection** (from a malicious web page, repo issue, or data payload), the attacker gains full control over those ambient credentials and can execute unauthorized mutations: exfiltrating private keys, executing `DROP TABLE`, or wiping repositories.
+
+Relay sits between the agent and tool execution to enforce **Authority + Credential Isolation + Evidence**:
+
+1. **Cedar Policy Authorization (Default-Deny):** Every tool call is canonicalized and evaluated against deterministic [AWS Cedar](https://www.cedarpolicy.com/) policies before execution.
+2. **JIT Credential Leasing:** The agent never holds long-lived secrets. Relay dynamically injects ephemeral, action-scoped credentials in memory for the microsecond duration of the tool execution.
+3. **Linux Network Namespace Sandbox:** External MCP subprocesses are placed in an isolated network namespace. All outbound traffic routes through Relay's in-process loopback HTTP proxy, blocking raw-socket exfiltration.
+4. **Cryptographic Action Receipts:** Every allowed or denied action produces a signed [DSSE / in-toto](https://in-toto.io/) attestation (Ed25519) stored in an append-only SQLite hash-chain ledger.
+5. **Human-in-the-Loop Step-Up:** High-risk actions (e.g., file deletion, database DDL) can require explicit confirmation on `/dev/tty` before execution.
+
+---
+
+## Architecture
 
 ```text
-               UNTRUSTED AGENT
-            Claude / Cursor / Agent
-                       │
-                       │ stdio (tools/call)
-                       ▼
-          ┌─────────────────────────┐
-          │      RELAY GATEWAY      │
-          ├─────────────────────────┤
-          │ 1. Canonicalize (JCS)   │
-          │ 2. Authorize (Cedar)    │
-          │ 3. Human Gate (/dev/tty)│
-          │ 4. JIT Credential Lease │
-          │ 5. Native In-Process Exec│
-          │ 6. DSSE Action Receipt  │
-          │ 7. Append-Only Ledger   │
-          └─────────────────────────┘
-                       │
-           ┌───────────┼───────────┐
-           ▼           ▼           ▼
-       Filesystem  PostgreSQL   GitHub
+       Untrusted AI Agent (Claude, Cursor, custom loop)
+                              │
+                              │ stdio JSON-RPC (tools/call)
+                              ▼
+               ┌──────────────────────────────┐
+               │        RELAY GATEWAY         │
+               ├──────────────────────────────┤
+               │ 1. Canonicalize Request (JCS)│
+               │ 2. Authorize via Cedar Engine│
+               │ 3. Step-Up Approval (/dev/tty)
+               │ 4. Issue JIT Credential Lease│
+               │ 5. Execute in Linux Sandbox  │
+               │ 6. Sign DSSE Action Receipt  │
+               │ 7. Record to Hash-Chain DB   │
+               └──────────────┬───────────────┘
+                              │
+               ┌──────────────┼──────────────┐
+               ▼              ▼              ▼
+          Filesystem      PostgreSQL      GitHub / HTTP Egress
+          (Sandboxed)   (Scoped Queries) (Namespace Isolated)
 ```
 
 ---
 
-## 2. What Problem Does Relay Solve?
+## Example Cedar Policy
 
-Today, giving an AI agent access to tools usually means granting it **ambient credentials** (e.g. `GITHUB_TOKEN`, `DATABASE_URL`, or broad filesystem access) directly within its environment.
+Policies use the formal [Cedar policy language](https://www.cedarpolicy.com/) and are strictly default-deny:
 
-When an agent suffers an **indirect prompt injection** (from a malicious web page, untrusted repository file, or database entry), the attacker gains full control over those ambient credentials and can execute destructive actions (exfiltrating SSH keys, dropping tables, or deleting repositories).
+```cedar
+// 1. Allow reading public files
+permit(
+    principal,
+    action == Relay::Action::"fs:read",
+    resource in Relay::Resource::"/workspace/public"
+);
 
-Relay solves this by separating **proposing an action** from **authorizing and executing an action**:
-- The agent proposes actions in plain text.
-- Relay normalizes the request into a canonical representation.
-- Relay checks Cedar security policies before any credential is leased or any tool is dispatched.
-- Leased credentials exist only for the microsecond duration of the tool execution in protected memory.
+// 2. Forbid access to sensitive paths under any circumstances
+forbid(
+    principal,
+    action,
+    resource in Relay::Resource::"~/.ssh"
+);
 
----
-
-## 3. What Relay Protects vs. What It Does Not Protect
-
-### What Relay Protects:
-- **Credential Isolation:** Agent processes never observe target API tokens (GitHub PATs, DB passwords) in memory or environment.
-- **Blast Radius Confinement:** Under 100% prompt-injection compromise, the agent cannot exceed what is explicitly permitted by Cedar policies.
-- **Tamper-Evident Evidence:** All actions produce signed, hash-chained receipts verifying who executed what, when, and under which policy version.
-
-### What Relay Does Not Protect (Out of Scope):
-- **Host OS Compromise:** If an attacker has `root` access or compromised the host kernel, they can bypass local software controls.
-- **Remote Cloud State:** A receipt proves Relay's observation; it does not guarantee remote eventual consistency or prevent remote server failures.
-- **Insecure User Policies:** If an administrator writes a permissive policy (`permit(principal, action, resource);`), Relay will authorize those actions.
-
-For detailed non-goals, see [What Relay Does Not Do](docs/security/limitations.md).
-
----
-
-## 4. Installation
-
-### Quick Install (Non-Root)
-```bash
-curl -fsSL https://raw.githubusercontent.com/relay-security/relay/main/install.sh | bash
-```
-
-### Manual Installation
-Download the release tarball and SHA-256 manifest from [Releases](https://github.com/relay-security/relay/releases), verify the checksum, and copy the binary to your `PATH`:
-```bash
-sha256sum --check SHA256SUMS
-tar -xzf relay-v0.1.0-x86_64-unknown-linux-gnu.tar.gz
-cp relay-v0.1.0-x86_64-unknown-linux-gnu/relay ~/.local/bin/
-```
-
-Verify installation:
-```bash
-relay --version
-relay doctor
+// 3. Require human approval for file deletions
+permit(
+    principal,
+    action == Relay::Action::"fs:delete",
+    resource
+) when {
+    context.has_approval == true
+};
 ```
 
 ---
 
-## 5. Quick Start: Running Governed Actions
+## Installation & Setup
 
-### Step 1: Diagnose Health & Configuration
+### Option 1: Build from Source (Cargo)
+
+Prerequisites: Rust 1.78+ (`rustup default stable`).
+
 ```bash
-relay doctor
+# Clone the repository
+git clone https://github.com/Sumeet-basfore/relay.git
+cd relay
+
+# Build optimized release binary
+cargo build --release
+
+# The binary is placed at target/release/relay
+./target/release/relay --version
 ```
 
-### Step 2: Wrap and Govern an MCP Server
-```bash
-relay run -- my-mcp-server --stdio
-```
+### Option 2: Install Script
 
-### Step 3: Cryptographically Verify the Audit Ledger
 ```bash
-relay verify
+curl -fsSL https://raw.githubusercontent.com/Sumeet-basfore/relay/main/install.sh | bash
 ```
-
-### Step 4: Inspect Generated Action Receipts
-```bash
-relay receipt list
-```
-
-### Step 5: Launch the Local Security Console
-```bash
-relay ui
-```
-Opens the local-first web UI (`http://127.0.0.1:8765`) with zero cloud telemetry and in-browser cryptographic receipt/ledger verification. See [Local Security Console Guide](docs/getting-started/ui.md).
 
 ---
 
-## 6. Golden Reference Demo & Adversarial Attack Suite
+## Quickstart & CLI Commands
 
-Relay includes a canonical, fully automated, disposable Golden Reference Demonstration that proves its security properties across native connectors, Linux network namespace sandboxing, anti-SSRF filters, and cryptographic tamper detection:
+### 1. Check System Health & Security Dependencies
+Verifies keyring storage, signing keys, and ledger initialization:
+```bash
+./target/release/relay doctor
+# or via cargo:
+cargo run --bin relay -- doctor
+```
+
+### 2. Wrap and Govern an MCP Server
+Interpose Relay in front of any stdio MCP server:
+```bash
+./target/release/relay run -- my-mcp-server --stdio
+```
+
+To use a custom policy directory and pass vaulted environment variables:
+```bash
+./target/release/relay run --policy ./policies --env GITHUB_TOKEN=vault:gh_token -- my-mcp-server
+```
+
+### 3. Manage Vaulted Secrets
+Store secrets securely in the OS native keyring:
+```bash
+# Store a secret
+./target/release/relay secret set github_token "ghp_xxxxxxxxxxxx"
+
+# List stored secret aliases (values remain masked)
+./target/release/relay secret list
+```
+
+### 4. Validate Cedar Policies
+Check policy syntax and schema consistency:
+```bash
+./target/release/relay policy validate --path ./policies
+```
+
+### 5. Launch Local Security Console (Web UI)
+Start the local dashboard at `http://127.0.0.1:8765` to inspect live tool calls, policy evaluations, and audit logs:
+```bash
+./target/release/relay ui
+```
+*Tip:* Run `./target/release/relay ui --no-browser --port 4040` for headless environments.
+
+### 6. Inspect & Verify Action Receipts
+Inspect tamper-evident audit records:
+```bash
+# List recent action receipts
+./target/release/relay receipt list --limit 10
+
+# Inspect a specific receipt
+./target/release/relay receipt get <RECEIPT_UUID_OR_HASH>
+
+# Cryptographically verify the SQLite hash-chain ledger
+./target/release/relay verify
+```
+
+---
+
+## Automated Golden Demo & Attack Probes
+
+Relay includes a disposable, automated 7-scene demonstration showing policy enforcement, SQL injection blocking, step-up approvals, and network namespace defense:
 
 ```bash
-# Run the complete end-to-end golden demonstration
+# Run the complete end-to-end demo
 ./scripts/demo/run.sh
 
 # Run targeted adversarial attack probes
 ./scripts/demo/attack.sh
 
-# Clean up all disposable demo state
+# Clean up demo artifacts
 ./scripts/demo/cleanup.sh
 ```
 
-For detailed reference materials:
-- **[Golden Reference Architecture](docs/demo/golden-reference.md)**: Canonical topologies, sandboxing modes, and invariant mappings.
-- **[Demo Presentation Script](docs/demo/demo-script.md)**: Turn-by-turn presenter script for live 10-minute demonstrations.
-- **[Reproduction Manual](docs/demo/reproduce.md)**: Step-by-step reproduction instructions for independent security reviewers.
+---
+
+## Running Tests
+
+Relay features 380+ automated unit, integration, and security tests:
+
+```bash
+# Run all workspace tests
+cargo test --workspace --all-features
+
+# Run specific crate tests
+cargo test -p relay-policy       # Cedar authorization
+cargo test -p relay-receipts     # DSSE signing & cryptography
+cargo test -p relay-mcp          # MCP gateway & network sandbox
+cargo test -p relay-connectors   # Filesystem, Postgres, GitHub connectors
+
+# Linter and formatting checks
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo fmt --check
+```
 
 ---
 
-## 7. Security Documentation Suite
+## Security Model & Boundaries
 
-Relay's complete security architecture is fully specified in `docs/security/`:
+| Protected Against | Out of Scope / Not Protected |
+|---|---|
+| **Indirect prompt injection:** Compromised agent cannot bypass Cedar policies. | **Host root/kernel compromise:** Attacker with root can bypass OS controls. |
+| **Ambient credential exposure:** Agent never sees raw tokens or keys in memory/env. | **Permissive policies:** Misconfigured `permit(any)` rules will allow actions. |
+| **Network socket exfiltration:** Subprocess raw network access is sandboxed in Linux netns. | **Non-Linux sandboxing:** macOS/Windows use managed cooperative proxy mode. |
+| **Audit tampering:** Signed DSSE receipts in a cryptographic SQLite hash chain. | **Remote cloud eventual consistency:** Proves Relay's observation locally. |
 
-- **[Security Overview & Index](docs/security/README.md)**
-- **[Threat Model](docs/security/threat-model.md)**
-- **[Formal Security Invariants](docs/security/security-invariants.md)**
-- **[Evidence & Receipt Model](docs/security/evidence-model.md)**
-- **[Credential Security Model](docs/security/credential-model.md)**
-- **[Policy Security Model](docs/security/policy-model.md)**
-- **[Native Connector Security](docs/security/connectors.md)**
-- **[MCP Mediation Boundary](docs/security/mcp-boundary.md)**
-- **[Prompt Injection Analysis](docs/security/prompt-injection.md)**
-- **[Security Claims Matrix](docs/security/security-claims.md)**
-- **[What Relay Does Not Do](docs/security/limitations.md)**
-- **[Secure Deployment Guide](docs/security/secure-deployment.md)**
-- **[Local Security Console User Guide](docs/getting-started/ui.md)**
-- **[Security Console Architecture](docs/commercial/cr002-ui-architecture.md)**
-- **[Console Privacy Audit](docs/commercial/cr002-privacy-audit.md)**
-- **[Vulnerability Disclosure Policy](SECURITY.md)**
+For the complete threat model and invariant specifications, see [`docs/security/`](docs/security/README.md).
 
 ---
 
-## 8. Commercial & Legal Governance Suite
+## Repository Structure
 
-Relay's commercial architecture, legal documentation, and privacy posture are documented in `docs/commercial/` and `docs/legal/`:
-
-- **[Commercial Model Specification](docs/commercial/cr003-commercial-model.md)**: Free Apache 2.0 open core vs. paid commercial services.
-- **[Commercial Security Architecture](docs/commercial/commercial-security-architecture.md)**: Trust boundaries and non-interference guarantees.
-- **[Commercial Launch Threat Model](docs/commercial/cr003-threat-model.md)**: 10 commercial attack vectors and control plane isolation.
-- **[Commercial Subprocessor Register](docs/commercial/subprocessors.md)**: Audited third-party service providers.
-- **[Billing & Webhook Architecture](docs/commercial/billing-architecture.md)**: Stripe integration and replay-protected webhook security.
-- **[Open Core License Architecture](docs/legal/open-core-model.md)**: 100% Apache-2.0 repository audit.
-- **[Commercial Privacy Policy Draft](docs/legal/privacy-policy-draft.md)**: Counsel-ready privacy policy & California Notice at Collection.
-- **[Commercial Terms of Service Draft](docs/legal/terms-draft.md)**: Subscriptions, liability caps, and arbitration.
-- **[Data Processing Addendum Spec](docs/legal/dpa-spec.md)**: Enterprise controller-to-processor commitments and SCCs.
-- **[Refund & Cancellation Policy Spec](docs/legal/refund-policy-spec.md)**: 14-day satisfaction guarantee and dunning process.
-- **[Legal Counsel Package](docs/legal/counsel-package.md)**: Engineering facts vs. legal questions vs. counsel decisions.
-- **[Commercial Launch Checklist](docs/release/CR003-commercial-launch-checklist.md)**: Pre-paid launch checklist.
-- **[Commercial Launch Report](docs/release/CR003-commercial-launch-report.md)**: Milestone readiness report.
-- **[CR003 Decision Record](docs/release/CR003-decision-record.md)**: Official milestone sign-off and verdict.
-- **[Private Beta Onboarding Guide](docs/commercial/private-beta-onboarding.md)**: Local-first customer onboarding and security orientation.
-- **[Support Operations Runbook](docs/operations/pb001-support-runbook.md)**: Production support workflows and zero-secret mandate.
-- **[Incident Tabletop Simulations](docs/operations/pb001-incident-tabletop.md)**: Operational security exercises.
-- **[Extended Beta Charter](docs/commercial/eb001-beta-charter.md)**: Extended private beta charter and qualification framework.
-- **[Extended Beta Scorecard](docs/commercial/eb001-beta-scorecard.md)**: Customer evaluation scorecard and metrics.
-- **[Infrastructure & Availability Review](docs/operations/eb001-infrastructure-review.md)**: Commercial infrastructure audit and DR results.
-- **[Support Results & Stress Test](docs/operations/eb001-support-results.md)**: Inbound case log and concurrent stress test results.
-- **[Commercial Launch Readiness](docs/release/EB001-launch-readiness.md)**: Comprehensive GA commercial launch readiness assessment.
-- **[EB001 Decision Record](docs/release/EB001-decision-record.md)**: Final milestone verdict and launch decision.
+```text
+crates/
+├── relay-domain       # Core domain entities, errors, and state machines
+├── relay-canonical    # RFC 8785 JSON Canonicalization Scheme (JCS)
+├── relay-policy       # Cedar policy engine and request mappers
+├── relay-credentials   # JIT credential lease broker and OS keyring integration
+├── relay-receipts     # RFC 9598 DSSE / in-toto v1.0 signing (Ed25519)
+├── relay-connectors   # Native Filesystem, PostgreSQL, and GitHub connectors
+├── relay-mcp          # MCP stdio gateway, HTTP loopback proxy, and Linux netns sandbox
+├── relay-ledger       # Append-only SQLite hash-chain audit ledger
+└── relay-cli          # CLI commands, daemon, and local web UI console
+```
 
 ---
 
-## 9. License
+## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
