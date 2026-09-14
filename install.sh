@@ -52,18 +52,35 @@ elif [ -f "./dist/${TARBALL}" ]; then
     if [ -f "./dist/SHA256SUMS" ]; then
         cp "./dist/SHA256SUMS" "${TMP_DIR}/"
     fi
-elif [ -f "./target/release/relay" ]; then
+elif [ -f \"./target/release/relay\" ]; then
     echo "Using compiled release binary ./target/release/relay"
     mkdir -p "${TMP_DIR}/${ARCHIVE_NAME}"
     cp "./target/release/relay" "${TMP_DIR}/${ARCHIVE_NAME}/"
 else
-    # In production, download from release repository
-    RELEASE_URL="https://github.com/relay-security/relay/releases/download/v${VERSION}/${TARBALL}"
-    CHECKSUM_URL="https://github.com/relay-security/relay/releases/download/v${VERSION}/SHA256SUMS"
+    # Resolve 'latest' version tag from GitHub Releases API
+    if [ "${VERSION}" = "latest" ] || [ "${VERSION}" = "0.1.0" ]; then
+        echo "Resolving latest release version..."
+        if command -v curl >/dev/null 2>&1; then
+            RESOLVED="$(curl -fsSL "https://api.github.com/repos/Sumeet-basfore/relay/releases/latest" \
+                | grep '"tag_name"' \
+                | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/' \
+                | sed 's/^v//')" || RESOLVED=""
+        fi
+        if [ -n "${RESOLVED:-}" ]; then
+            VERSION="${RESOLVED}"
+            ARCHIVE_NAME="relay-v${VERSION}-${TARGET}"
+            TARBALL="${ARCHIVE_NAME}.tar.gz"
+            echo "Resolved version: ${VERSION}"
+        fi
+    fi
+
+    RELEASE_URL="https://github.com/Sumeet-basfore/relay/releases/download/v${VERSION}/${TARBALL}"
+    CHECKSUM_URL="https://github.com/Sumeet-basfore/relay/releases/download/v${VERSION}/checksums.sha256"
     echo "Fetching release archive from ${RELEASE_URL}..."
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "${RELEASE_URL}" -o "${TMP_DIR}/${TARBALL}" || {
             echo "Error: Failed to download release archive from ${RELEASE_URL}" >&2
+            echo "Check https://github.com/Sumeet-basfore/relay/releases for available versions." >&2
             exit 1
         }
         curl -fsSL "${CHECKSUM_URL}" -o "${TMP_DIR}/SHA256SUMS" 2>/dev/null || true
@@ -140,4 +157,11 @@ case ":${PATH}:" in
         ;;
 esac
 
-echo "Run 'relay doctor' to verify system health and configuration."
+echo ""
+echo "Quick start:"
+echo "  relay doctor   # Verify system health"
+echo "  relay ui       # Open local security console"
+echo ""
+echo "Privacy: Relay is local-first. No telemetry. No cloud sync."
+echo "Docs:    https://github.com/Sumeet-basfore/relay#readme"
+echo ""
