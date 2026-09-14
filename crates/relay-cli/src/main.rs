@@ -1,18 +1,9 @@
 use clap::Parser;
 
-mod cli;
-mod cli_error;
-mod config;
-mod doctor;
-mod governed_interceptor;
-mod logging;
-mod receipt_cmd;
-mod run;
-mod verify_cmd;
-
-use cli::{Cli, Commands, PolicySubcommands, SecretSubcommands};
-use cli_error::CliError;
-use config::RelayConfig;
+use relay_cli::cli::{Cli, Commands, PolicySubcommands, SecretSubcommands};
+use relay_cli::cli_error::CliError;
+use relay_cli::config::RelayConfig;
+use relay_cli::{doctor, logging, receipt_cmd, run, ui_cmd, verify_cmd};
 
 #[tokio::main]
 async fn main() {
@@ -41,6 +32,10 @@ async fn run_app(cli: Cli, config: RelayConfig) -> Result<(), CliError> {
     match cli.command {
         Commands::Run(args) => {
             run::execute(args, &config).await?;
+            Ok(())
+        }
+        Commands::Ui(args) => {
+            ui_cmd::execute(args, &config).await?;
             Ok(())
         }
         Commands::Policy(args) => match args.command {

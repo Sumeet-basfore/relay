@@ -50,6 +50,9 @@ pub enum Commands {
 
     /// Diagnose system health, keyring access, keys, and permissions
     Doctor,
+
+    /// Launch the local security console web UI
+    Ui(UiArgs),
 }
 
 #[derive(Args, Debug)]
@@ -169,4 +172,23 @@ pub enum ReceiptSubcommands {
         #[arg(short, long, default_value = "20")]
         limit: usize,
     },
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct UiArgs {
+    /// Port to bind the local UI server [default: 8765]
+    #[arg(short = 'p', long = "port", default_value_t = 8765)]
+    pub port: u16,
+
+    /// Host address to bind [default: 127.0.0.1; MUST be loopback]
+    #[arg(long = "host", default_value = "127.0.0.1")]
+    pub host: String,
+
+    /// Do not automatically open default web browser
+    #[arg(long = "no-browser")]
+    pub no_browser: bool,
+
+    /// Specific session auth token to use instead of generating an ephemeral token
+    #[arg(long = "token")]
+    pub token: Option<String>,
 }

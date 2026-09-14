@@ -22,3 +22,13 @@ __pycache__/
 dist/*.tar.gz
 dist/*.sha256
 
+# Secrets & Private Keys
+*.pem
+*.key
+*.priv
+.env
+.env.*
+
+# OS Metadata
+.DS_Store
+Thumbs.db

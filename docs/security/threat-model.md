@@ -159,3 +159,24 @@ Relay models nine adversary archetypes:
   4. Hop-by-hop headers (`Proxy-Authorization`, `Connection`, `Relay-Proxy-Auth`) are stripped before upstream dispatch.
 - **Expected Result:** Forged or replayed requests fail with HTTP 407 Proxy Authentication Required; zero credentials leaked to child.
 - **Residual Risk:** None within the memory and process isolation boundaries of the host OS.
+
+---
+
+### Threat T-10: Local Security Console Browser Attack Surface (CR002)
+- **Threat:** Malicious web pages open in other browser tabs, local DNS rebinding, CSRF, or malicious iframes attempt to access the local console API, manipulate policies, or extract credentials.
+- **Attack Preconditions:** The operator has launched `relay ui`, binding an HTTP server on `127.0.0.1:<port>`.
+- **Attack:** 
+  1. *DNS Rebinding:* Attacker maps `rebind.attacker.com` to `127.0.0.1` and executes background requests to `/api/v1/*`.
+  2. *CSRF:* Malicious tab submits cross-origin POSTs to mutate policies or trigger operations.
+  3. *Credential Extraction:* Malicious script attempts to read raw API tokens or private signing keys from UI API responses.
+  4. *Clickjacking:* Malicious site embeds the console in a hidden iframe.
+  5. *Approval Bypass:* Browser script attempts to approve sensitive operations via automated web calls.
+- **Relay Control:**
+  1. **Strict Host Header Validation:** The HTTP server validates the `Host` header against `127.0.0.1:<port>` and `localhost:<port>`, immediately rejecting DNS rebinding requests with HTTP 403.
+  2. **Origin & CSRF Token Validation:** All mutating endpoints (`POST`, `PUT`, `DELETE`) verify strict local Origin headers and require a session-bound `X-Relay-CSRF` custom header, which standard cross-origin form submissions cannot set.
+  3. **Local Authentication:** Access requires a 256-bit cryptographically secure CLI-issued token validated in constant time, with a 15-minute idle timeout.
+  4. **Strict CSP & Frame Denial:** Responses enforce `Content-Security-Policy: default-src 'self'` and `X-Frame-Options: DENY`, blocking framing and remote script execution.
+  5. **Data Minimization & Secret Redaction:** Credentials, PATs, database passwords, and private keys are scrubbed and replaced with `[REDACTED]` prior to serialization (`data_minimization.rs`).
+  6. **Zero Direct Execution & Zero Approval Endpoints:** The console exposes zero connector execution endpoints. Authoritative approvals remain strictly anchored to the controlling terminal (`/dev/tty`).
+- **Expected Result:** DNS rebinding, CSRF, XSS, and iframe attacks are blocked; zero ambient credentials exposed; out-of-band approval boundary intact.
+- **Residual Risk:** An attacker with local OS code execution as the same user can access loopback sockets; local OS user security relies on host kernel process isolation.

@@ -35,6 +35,7 @@ relay-ledger = { path = "crates/relay-ledger" }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc", "raw_value", "preserve_order"] }
 serde_jcs = { version = "0.1" }
+httparse = { version = "1.10", default-features = false, features = ["std"] }
 sqlparser = { version = "0.47", default-features = false, features = ["std"] }
 
 # Error Handling & Async Trait
@@ -52,6 +53,7 @@ wiremock = { version = "0.6" }
 # Cryptography & Memory Security
 ed25519-dalek = { version = "2.1", default-features = false, features = ["rand_core", "serde", "zeroize"] }
 sha2 = { version = "0.10" }
+hmac = { version = "0.12" }
 base64 = { version = "0.22" }
 zeroize = { version = "1.8", default-features = false, features = ["derive", "alloc"] }
 secrecy = { version = "0.8", default-features = false, features = ["serde", "alloc"] }

@@ -7,6 +7,10 @@ authors.workspace = true
 repository.workspace = true
 description = "Command-line interface and gateway entrypoint for Relay"
 
+[lib]
+name = "relay_cli"
+path = "src/lib.rs"
+
 [[bin]]
 name = "relay"
 path = "src/main.rs"
@@ -22,6 +26,7 @@ relay-mcp = { workspace = true }
 relay-ledger = { workspace = true }
 hex = { workspace = true }
 chrono = { workspace = true }
+uuid = { workspace = true }
 async-trait = { workspace = true }
 
 clap = { workspace = true }
@@ -33,12 +38,22 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 color-eyre = { workspace = true }
 thiserror = { workspace = true }
+httparse = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+ed25519-dalek = { workspace = true }
+base64 = { workspace = true }
+serde_jcs = { workspace = true }
 
 [dev-dependencies]
 relay-mcp = { workspace = true }
+relay-domain = { workspace = true }
+relay-policy = { workspace = true }
+rand_core = { workspace = true }
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
+reqwest = { workspace = true }
 libc = { workspace = true }
 rusqlite = { workspace = true }

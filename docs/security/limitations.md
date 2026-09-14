@@ -69,3 +69,13 @@ Relay mediates external MCP subprocess network egress via an in-process loopback
 
 ### 8. Relay Does Not Provide Hardware-Backed Custody by Default
 While Relay integrates with the OS Keyring (which may leverage Apple Secure Enclave, Windows TPM, or Linux Secret Service depending on host hardware), Relay itself is software. In headless environments using the encrypted file fallback (`EncryptedFileProvider`), master key security depends on host filesystem and environment variable protections.
+
+---
+
+### 9. Local Security Console Boundaries & Non-Goals (CR002)
+The **Relay Local Security Console** (`relay ui`) provides real-time operational visibility over Relay's security boundary:
+- **Not a Cloud Dashboard:** The console is strictly local and loopback-only (`127.0.0.1`). It does not connect to external clouds, aggregate fleet metrics, or provide multi-tenant authentication.
+- **No Browser Approval Bypass:** Sensitive destructive actions requiring operator approval MUST be confirmed on the controlling terminal (`/dev/tty`). The console displays pending approvals but explicitly provides no browser click mechanism to authorize operations.
+- **No Direct Execution Path:** The UI cannot be used as an alternate execution endpoint to trigger tool commands. Tool execution only occurs through governed MCP protocol mediation.
+- **Localhost Plaintext HTTP:** By default, the local console serves HTTP over loopback (`127.0.0.1`), assuming kernel-level protection between local processes. It does not provide HTTPS certificates out-of-the-box; for remote access across networks, operators must use an SSH tunnel (`ssh -L`).
+

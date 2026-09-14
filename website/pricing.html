@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing &amp; Support Plans — Relay</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z'/></svg>">
+</head>
+<body>
+  <header>
+    <div class="container nav-bar">
+      <a href="index.html" class="brand-link">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/></svg>
+        <span>Relay</span>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="product.html">Product</a></li>
+          <li><a href="security.html">Security</a></li>
+          <li><a href="pricing.html" class="active">Pricing</a></li>
+          <li><a href="docs.html">Docs</a></li>
+          <li><a href="download.html" class="btn-primary">Download</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero" style="padding-bottom: 1rem;">
+      <h1>Predictable Pricing. Zero Per-Token Tax.</h1>
+      <p>We do not meter prompts, tool calls, or context size. Pay only for commercial support, signed multi-seat licenses, and enterprise compliance tools.</p>
+    </section>
+
+    <div class="pricing-grid">
+      <!-- Community -->
+      <div class="pricing-card">
+        <h3>Community</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">For individual developers and open source projects.</p>
+        <div class="price">$0 <span class="price-sub">/ forever</span></div>
+        <ul class="pricing-features">
+          <li>Full Relay Core Engine &amp; CLI</li>
+          <li>Cedar Default-Deny Policy Engine</li>
+          <li>Local OS Keyring Credential Vault</li>
+          <li>Filesystem, Postgres &amp; GitHub Connectors</li>
+          <li>Local Security Console (<code>relay ui</code>)</li>
+          <li>Ed25519 DSSE Action Receipts &amp; Ledger</li>
+          <li>Community GitHub Discussions</li>
+        </ul>
+        <a href="download.html" class="btn-secondary" style="text-align: center; justify-content: center;">Download Free</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card featured">
+        <div style="position: absolute; top: -12px; right: 20px; background: var(--accent-color); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 9999px;">RECOMMENDED</div>
+        <h3>Team Pro</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">For engineering teams deploying autonomous agents.</p>
+        <div class="price">$49 <span class="price-sub">/ seat / month</span></div>
+        <ul class="pricing-features">
+          <li>Everything in Community</li>
+          <li>Signed Ed25519 Offline License Certificate</li>
+          <li>24-Hour Business Day Support SLA</li>
+          <li>Digitally Signed Team Policy Bundles</li>
+          <li>Commercial Security Update Bulletins</li>
+          <li>Self-Service Stripe Customer Portal</li>
+          <li>14-Day Money-Back Guarantee</li>
+        </ul>
+        <a href="contact.html?plan=pro" class="btn-primary" style="text-align: center; justify-content: center;">Join Private Paid Beta</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="pricing-card">
+        <h3>Enterprise</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">For organizations with strict compliance &amp; SLAs.</p>
+        <div class="price">Custom <span class="price-sub">/ annual</span></div>
+        <ul class="pricing-features">
+          <li>Everything in Team Pro</li>
+          <li>Dedicated 4-Hour Critical Response SLA</li>
+          <li>Automated SOC 2 / ISO 27001 Audit Packs</li>
+          <li>Custom Connector Architecture &amp; Review</li>
+          <li>Custom Enterprise DPA &amp; Terms</li>
+          <li>Dedicated Shared Slack / Teams Channel</li>
+          <li>Contractual IP Non-Infringement Warranty</li>
+        </ul>
+        <a href="contact.html?plan=enterprise" class="btn-secondary" style="text-align: center; justify-content: center;">Contact Enterprise Sales</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container footer-bottom">
+      <span>&copy; 2026 Relay Security Technologies.</span>
+      <a href="terms.html" style="color: var(--text-secondary); text-decoration: none;">Commercial Terms</a>
+    </div>
+  </footer>
+</body>
+</html>
