@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build — ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux x86_64
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+            archive: tar.gz
+            platform: linux-x86_64
+
+          # Linux aarch64 (cross-compiled)
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+            archive: tar.gz
+            platform: linux-aarch64
+            cross: true
+
+          # macOS Intel
+          - target: x86_64-apple-darwin
+            os: macos-13
+            archive: tar.gz
+            platform: macos-x86_64
+
+          # macOS Apple Silicon
+          - target: aarch64-apple-darwin
+            os: macos-14
+            archive: tar.gz
+            platform: macos-aarch64
+
+          # Windows x86_64
+          - target: x86_64-pc-windows-msvc
+            os: windows-2022
+            archive: zip
+            platform: windows-x86_64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross (Linux aarch64 only)
+        if: matrix.cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build (native)
+        if: '!matrix.cross'
+        run: cargo build --release --target ${{ matrix.target }} --bin relay
+
+      - name: Build (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }} --bin relay
+
+      # ── Package ────────────────────────────────────────────────────────────
+
+      - name: Package (Unix)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="relay-v${VERSION}-${{ matrix.platform }}"
+          mkdir -p "dist/${ARCHIVE}"
+          cp "target/${{ matrix.target }}/release/relay" "dist/${ARCHIVE}/relay"
+          cp README.md LICENSE "dist/${ARCHIVE}/" 2>/dev/null || true
+          cd dist
+          tar -czf "${ARCHIVE}.tar.gz" "${ARCHIVE}"
+          sha256sum "${ARCHIVE}.tar.gz" >> SHA256SUMS
+          echo "ASSET=dist/${ARCHIVE}.tar.gz" >> "$GITHUB_ENV"
+          echo "ASSET_NAME=${ARCHIVE}.tar.gz" >> "$GITHUB_ENV"
+
+      - name: Package (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          $archive = "relay-v${version}-${{ matrix.platform }}"
+          New-Item -ItemType Directory -Force -Path "dist/$archive"
+          Copy-Item "target/${{ matrix.target }}/release/relay.exe" "dist/$archive/relay.exe"
+          if (Test-Path README.md) { Copy-Item README.md "dist/$archive/" }
+          if (Test-Path LICENSE)   { Copy-Item LICENSE   "dist/$archive/" }
+          Compress-Archive -Path "dist/$archive" -DestinationPath "dist/$archive.zip"
+          $hash = (Get-FileHash "dist/$archive.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive.zip" | Out-File -Append "dist/SHA256SUMS"
+          echo "ASSET=dist/$archive.zip" | Out-File -Append $env:GITHUB_ENV
+          echo "ASSET_NAME=$archive.zip"  | Out-File -Append $env:GITHUB_ENV
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: |
+            ${{ env.ASSET }}
+          retention-days: 1
+
+      - name: Upload SHA256SUMS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sha256sums-${{ matrix.platform }}
+          path: dist/SHA256SUMS
+          retention-days: 1
+
+  # ── Publish GitHub Release ────────────────────────────────────────────────
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Merge SHA256SUMS
+        run: |
+          cat artifacts/sha256sums-*/SHA256SUMS | sort > artifacts/checksums.sha256
+          cp artifacts/checksums.sha256 artifacts/SHA256SUMS
+          echo "=== checksums.sha256 ==="
+          cat artifacts/checksums.sha256
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Relay ${{ github.ref_name }}"
+          body_path: .github/RELEASE_NOTES.md
+          fail_on_unmatched_files: false
+          files: |
+            artifacts/linux-x86_64/*.tar.gz
+            artifacts/linux-aarch64/*.tar.gz
+            artifacts/macos-x86_64/*.tar.gz
+            artifacts/macos-aarch64/*.tar.gz
+            artifacts/windows-x86_64/*.zip
+            artifacts/checksums.sha256
+            artifacts/SHA256SUMS
