@@ -46,15 +46,33 @@ impl ToolCallInterceptor for PassThroughInterceptor {
 /// Interceptor evaluating canonical tool calls against a PolicyEngine (Cedar PEP).
 pub struct PolicyToolCallInterceptor {
     policy_engine: std::sync::Arc<dyn relay_domain::PolicyEngine>,
+    approval_provider: Option<std::sync::Arc<dyn relay_domain::ApprovalProvider>>,
 }
 
 impl PolicyToolCallInterceptor {
     pub fn new(policy_engine: std::sync::Arc<dyn relay_domain::PolicyEngine>) -> Self {
-        Self { policy_engine }
+        Self {
+            policy_engine,
+            approval_provider: None,
+        }
+    }
+
+    pub fn with_approval_provider(
+        policy_engine: std::sync::Arc<dyn relay_domain::PolicyEngine>,
+        approval_provider: std::sync::Arc<dyn relay_domain::ApprovalProvider>,
+    ) -> Self {
+        Self {
+            policy_engine,
+            approval_provider: Some(approval_provider),
+        }
     }
 
     pub fn policy_engine(&self) -> &std::sync::Arc<dyn relay_domain::PolicyEngine> {
         &self.policy_engine
+    }
+
+    pub fn approval_provider(&self) -> Option<&std::sync::Arc<dyn relay_domain::ApprovalProvider>> {
+        self.approval_provider.as_ref()
     }
 }
 
@@ -92,28 +110,140 @@ impl ToolCallInterceptor for PolicyToolCallInterceptor {
                     );
                     InterceptResult::Forward(frame.to_vec())
                 } else if decision.requires_approval() {
-                    tracing::warn!(
-                        action_hash = %decision.action_hash.to_hex(),
-                        determining_policies = ?decision.determining_policies,
-                        "Action requires step-up operator approval; halting execution"
-                    );
-                    let reason = decision
-                        .reason
-                        .as_deref()
-                        .unwrap_or("Step-up operator approval required");
-                    let data = serde_json::json!({
-                        "action_hash": decision.action_hash.to_hex(),
-                        "decision_id": decision.decision_id.to_string(),
-                        "determining_policies": decision.determining_policies,
-                        "approval_required": true,
-                    });
-                    let err_resp = JsonRpcResponse::custom_error(
-                        ctx.request_id.clone(),
-                        -32005,
-                        format!("Approval Required: {reason}"),
-                        Some(data),
-                    );
-                    InterceptResult::Reject(Box::new(err_resp))
+                    if let Some(provider) = &self.approval_provider {
+                        let summary = format!(
+                            "Execute {} on {}",
+                            canonical_action.tool, canonical_action.resource
+                        );
+                        let mut approval = relay_domain::Approval::new_with_context(
+                            canonical_action.action_hash,
+                            decision.decision_id,
+                            summary,
+                            None,
+                            30,
+                            canonical_action.tool.to_string(),
+                            canonical_action.principal.clone(),
+                            canonical_action.resource.as_str(),
+                            decision.policy_digest,
+                            relay_domain::ApprovalMechanism::TtyInteractive,
+                        )
+                        .with_parameters_preview(canonical_action.canonical_arguments.clone());
+
+                        match provider.request_approval(&mut approval).await {
+                            Ok(()) => {
+                                tracing::info!(
+                                    action_hash = %decision.action_hash.to_hex(),
+                                    approver = ?approval.approver,
+                                    "Action approved by operator; forwarding downstream"
+                                );
+                                InterceptResult::Forward(frame.to_vec())
+                            }
+                            Err(relay_domain::ApprovalError::DeniedByHuman(reason)) => {
+                                tracing::warn!(
+                                    action_hash = %decision.action_hash.to_hex(),
+                                    reason = %reason,
+                                    "Action denied by operator on /dev/tty"
+                                );
+                                let data = serde_json::json!({
+                                    "action_hash": decision.action_hash.to_hex(),
+                                    "approval_id": approval.approval_id.to_string(),
+                                    "denied_by_human": true,
+                                    "reason": reason,
+                                });
+                                let err_resp = JsonRpcResponse::custom_error(
+                                    ctx.request_id.clone(),
+                                    -32001,
+                                    format!(
+                                        "Action rejected by operator approval policy: {reason}"
+                                    ),
+                                    Some(data),
+                                );
+                                InterceptResult::Reject(Box::new(err_resp))
+                            }
+                            Err(relay_domain::ApprovalError::NonInteractiveMode) => {
+                                tracing::warn!(
+                                    action_hash = %decision.action_hash.to_hex(),
+                                    "Action blocked in headless mode: no interactive TTY available"
+                                );
+                                let data = serde_json::json!({
+                                    "action_hash": decision.action_hash.to_hex(),
+                                    "approval_id": approval.approval_id.to_string(),
+                                    "headless_blocked": true,
+                                    "exit_code": relay_domain::ExitCode::EXIT_APPROVAL_REQUIRED,
+                                });
+                                let err_resp = JsonRpcResponse::custom_error(
+                                    ctx.request_id.clone(),
+                                    -32005,
+                                    "Approval Required: Action requires human approval but gateway is running in headless mode",
+                                    Some(data),
+                                );
+                                InterceptResult::Reject(Box::new(err_resp))
+                            }
+                            Err(relay_domain::ApprovalError::TimedOut { timeout_secs }) => {
+                                tracing::warn!(
+                                    action_hash = %decision.action_hash.to_hex(),
+                                    timeout_secs = timeout_secs,
+                                    "Approval request timed out"
+                                );
+                                let data = serde_json::json!({
+                                    "action_hash": decision.action_hash.to_hex(),
+                                    "approval_id": approval.approval_id.to_string(),
+                                    "timed_out": true,
+                                    "timeout_secs": timeout_secs,
+                                });
+                                let err_resp = JsonRpcResponse::custom_error(
+                                    ctx.request_id.clone(),
+                                    -32005,
+                                    format!("Approval Timed Out: Operator did not respond within {timeout_secs}s"),
+                                    Some(data),
+                                );
+                                InterceptResult::Reject(Box::new(err_resp))
+                            }
+                            Err(err) => {
+                                tracing::warn!(
+                                    action_hash = %decision.action_hash.to_hex(),
+                                    error = %err,
+                                    "Approval cancelled or failed; blocking execution"
+                                );
+                                let data = serde_json::json!({
+                                    "action_hash": decision.action_hash.to_hex(),
+                                    "approval_id": approval.approval_id.to_string(),
+                                    "cancelled": true,
+                                    "reason": err.to_string(),
+                                });
+                                let err_resp = JsonRpcResponse::custom_error(
+                                    ctx.request_id.clone(),
+                                    -32001,
+                                    format!("Approval Cancelled: {err}"),
+                                    Some(data),
+                                );
+                                InterceptResult::Reject(Box::new(err_resp))
+                            }
+                        }
+                    } else {
+                        tracing::warn!(
+                            action_hash = %decision.action_hash.to_hex(),
+                            determining_policies = ?decision.determining_policies,
+                            "Action requires step-up operator approval; halting execution"
+                        );
+                        let reason = decision
+                            .reason
+                            .as_deref()
+                            .unwrap_or("Step-up operator approval required");
+                        let data = serde_json::json!({
+                            "action_hash": decision.action_hash.to_hex(),
+                            "decision_id": decision.decision_id.to_string(),
+                            "determining_policies": decision.determining_policies,
+                            "approval_required": true,
+                        });
+                        let err_resp = JsonRpcResponse::custom_error(
+                            ctx.request_id.clone(),
+                            -32005,
+                            format!("Approval Required: {reason}"),
+                            Some(data),
+                        );
+                        InterceptResult::Reject(Box::new(err_resp))
+                    }
                 } else {
                     tracing::warn!(
                         action_hash = %decision.action_hash.to_hex(),

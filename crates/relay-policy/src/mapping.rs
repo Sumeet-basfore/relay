@@ -63,6 +63,34 @@ pub fn map_authorization_request(
             let res_str = format!("Relay::Repository::\"{repo_eid}\"");
             EntityUid::from_str(&res_str)
         }
+        "http" | "https" => {
+            let path = resource_uri.path();
+            let host_port = path.split('/').next().unwrap_or(path);
+            let (host, port) = if let Some((h, p)) = host_port.split_once(':') {
+                (
+                    h,
+                    p.parse::<u16>()
+                        .unwrap_or(if resource_uri.scheme() == "http" {
+                            80
+                        } else {
+                            443
+                        }),
+                )
+            } else {
+                (
+                    host_port,
+                    if resource_uri.scheme() == "http" {
+                        80
+                    } else {
+                        443
+                    },
+                )
+            };
+            let endpoint_id = format!("{}:{}", host, port);
+            let ep_eid = escape_cedar_eid(&endpoint_id);
+            let res_str = format!("Relay::NetworkEndpoint::\"{ep_eid}\"");
+            EntityUid::from_str(&res_str)
+        }
         _ => {
             let uri_eid = escape_cedar_eid(resource_uri.as_str());
             let res_str = format!("Relay::Resource::\"{uri_eid}\"");
@@ -116,6 +144,17 @@ pub fn map_authorization_request(
         .and_then(|v| v.as_str())
     {
         context_map.insert("repo".to_string(), json!(repo_val));
+    }
+
+    // Context host, port, scheme
+    if let Some(host_val) = request.arguments.get("host").and_then(|v| v.as_str()) {
+        context_map.insert("host".to_string(), json!(host_val));
+    }
+    if let Some(port_val) = request.arguments.get("port").and_then(|v| v.as_i64()) {
+        context_map.insert("port".to_string(), json!(port_val));
+    }
+    if let Some(scheme_val) = request.arguments.get("scheme").and_then(|v| v.as_str()) {
+        context_map.insert("scheme".to_string(), json!(scheme_val));
     }
 
     // Working directory

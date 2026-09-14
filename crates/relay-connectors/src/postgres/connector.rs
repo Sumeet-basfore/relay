@@ -55,9 +55,18 @@ impl PostgresConnector {
         &self.client
     }
 
-    fn extract_execution_plan(
+    pub fn extract_execution_plan(
         canonical_action: &CanonicalAction,
-    ) -> Result<(PostgresResource, String, relay_canonical::NormalizedSql, String, bool), PostgresError> {
+    ) -> Result<
+        (
+            PostgresResource,
+            String,
+            relay_canonical::NormalizedSql,
+            String,
+            bool,
+        ),
+        PostgresError,
+    > {
         if canonical_action.tool.namespace != "postgres" {
             return Err(PostgresError::UnsupportedStatement(format!(
                 "Non-PostgreSQL tool namespace '{}'",
@@ -84,7 +93,8 @@ impl PostgresConnector {
 
         if normalized.canonical_sql != canonical_sql {
             return Err(PostgresError::UnsupportedStatement(
-                "Canonical SQL divergence detected between stored arguments and AST metadata".to_string(),
+                "Canonical SQL divergence detected between stored arguments and AST metadata"
+                    .to_string(),
             ));
         }
 
@@ -100,7 +110,9 @@ impl PostgresConnector {
             if arg_host != resource.host {
                 return Err(PostgresError::ResourceMismatch {
                     action_target: canonical_action.resource.as_str().to_string(),
-                    op_target: format!("host argument '{arg_host}' diverges from canonical resource"),
+                    op_target: format!(
+                        "host argument '{arg_host}' diverges from canonical resource"
+                    ),
                 });
             }
         }
@@ -122,7 +134,13 @@ impl PostgresConnector {
         let op_name = format!("postgres.{}", canonical_action.tool.name);
         let is_mutating = is_mutating_operation(normalized.operation);
 
-        Ok((resource, canonical_sql.to_string(), normalized, op_name, is_mutating))
+        Ok((
+            resource,
+            canonical_sql.to_string(),
+            normalized,
+            op_name,
+            is_mutating,
+        ))
     }
 
     pub async fn execute_governed(
@@ -131,9 +149,50 @@ impl PostgresConnector {
         decision: &PolicyDecision,
         credential_broker: &dyn CredentialBroker,
     ) -> Result<ExecutionResult, ExecutionError> {
-        if decision.decision != PolicyDecisionType::Allow {
+        self.execute_governed_with_approval(canonical_action, decision, None, credential_broker)
+            .await
+    }
+
+    pub async fn execute_governed_with_approval(
+        &self,
+        canonical_action: &CanonicalAction,
+        decision: &PolicyDecision,
+        approval: Option<&Approval>,
+        credential_broker: &dyn CredentialBroker,
+    ) -> Result<ExecutionResult, ExecutionError> {
+        if decision.decision == PolicyDecisionType::ApprovalRequired {
+            match approval {
+                Some(appr) => {
+                    if appr.action_hash != canonical_action.action_hash {
+                        return Err(PostgresError::ActionHashMismatch {
+                            expected: canonical_action.action_hash.to_hex(),
+                            actual: appr.action_hash.to_hex(),
+                        }
+                        .into());
+                    }
+                    if appr.state != ApprovalState::Approved {
+                        return Err(PostgresError::UnauthorizedExecution.into());
+                    }
+                    if appr.is_expired() {
+                        return Err(PostgresError::UnauthorizedExecution.into());
+                    }
+                }
+                None => {
+                    return Err(PostgresError::UnauthorizedExecution.into());
+                }
+            }
+        } else if decision.decision != PolicyDecisionType::Allow {
             return Err(PostgresError::UnauthorizedExecution.into());
         }
+
+        let effective_decision =
+            if decision.decision == PolicyDecisionType::ApprovalRequired && approval.is_some() {
+                let mut d = decision.clone();
+                d.decision = PolicyDecisionType::Allow;
+                d
+            } else {
+                decision.clone()
+            };
 
         if canonical_action.action_hash != decision.action_hash {
             return Err(PostgresError::ActionHashMismatch {
@@ -164,7 +223,7 @@ impl PostgresConnector {
         );
 
         let (lease, secret) = credential_broker
-            .acquire_lease(&cred_req, decision)
+            .acquire_lease(&cred_req, &effective_decision)
             .await
             .map_err(|e| PostgresError::CredentialError(e.to_string()))?;
 
@@ -200,10 +259,7 @@ impl PostgresConnector {
             Ok(resp) => {
                 let preview = format!(
                     "PostgreSQL {} on {}/{} succeeded ({} rows)",
-                    op_name,
-                    resource.host,
-                    resource.database,
-                    resp.row_count
+                    op_name, resource.host, resource.database, resp.row_count
                 );
                 Ok(ExecutionResult::success(&resp.body, preview))
             }
@@ -222,9 +278,42 @@ impl PostgresConnector {
         credential_broker: &dyn CredentialBroker,
         signer: &Ed25519ReceiptSigner,
     ) -> Result<(ExecutionResult, ActionReceipt), (ExecutionError, Option<ActionReceipt>)> {
-        if decision.decision != PolicyDecisionType::Allow {
+        if decision.decision == PolicyDecisionType::ApprovalRequired {
+            match approval {
+                Some(appr) => {
+                    if appr.action_hash != canonical_action.action_hash {
+                        return Err((
+                            PostgresError::ActionHashMismatch {
+                                expected: canonical_action.action_hash.to_hex(),
+                                actual: appr.action_hash.to_hex(),
+                            }
+                            .into(),
+                            None,
+                        ));
+                    }
+                    if appr.state != ApprovalState::Approved {
+                        return Err((PostgresError::UnauthorizedExecution.into(), None));
+                    }
+                    if appr.is_expired() {
+                        return Err((PostgresError::UnauthorizedExecution.into(), None));
+                    }
+                }
+                None => {
+                    return Err((PostgresError::UnauthorizedExecution.into(), None));
+                }
+            }
+        } else if decision.decision != PolicyDecisionType::Allow {
             return Err((PostgresError::UnauthorizedExecution.into(), None));
         }
+
+        let effective_decision =
+            if decision.decision == PolicyDecisionType::ApprovalRequired && approval.is_some() {
+                let mut d = decision.clone();
+                d.decision = PolicyDecisionType::Allow;
+                d
+            } else {
+                decision.clone()
+            };
 
         if canonical_action.action_hash != decision.action_hash {
             return Err((
@@ -237,26 +326,11 @@ impl PostgresConnector {
             ));
         }
 
-        if let Some(appr) = approval {
-            if appr.action_hash != canonical_action.action_hash {
-                return Err((
-                    PostgresError::ActionHashMismatch {
-                        expected: canonical_action.action_hash.to_hex(),
-                        actual: appr.action_hash.to_hex(),
-                    }
-                    .into(),
-                    None,
-                ));
-            }
-            if appr.state != ApprovalState::Approved {
-                return Err((PostgresError::UnauthorizedExecution.into(), None));
-            }
-        }
-
-        let (resource, canonical_sql, normalized, op_name, is_mutating) = match Self::extract_execution_plan(canonical_action) {
-            Ok(plan) => plan,
-            Err(err) => return Err((err.into(), None)),
-        };
+        let (resource, canonical_sql, normalized, op_name, is_mutating) =
+            match Self::extract_execution_plan(canonical_action) {
+                Ok(plan) => plan,
+                Err(err) => return Err((err.into(), None)),
+            };
 
         if let Err(err) = validate_table_scope(
             &resource,
@@ -277,7 +351,10 @@ impl PostgresConnector {
             60,
         );
 
-        let (lease, secret) = match credential_broker.acquire_lease(&cred_req, decision).await {
+        let (lease, secret) = match credential_broker
+            .acquire_lease(&cred_req, &effective_decision)
+            .await
+        {
             Ok(pair) => pair,
             Err(e) => return Err((PostgresError::CredentialError(e.to_string()).into(), None)),
         };
@@ -298,11 +375,7 @@ impl PostgresConnector {
         let execution_id = ExecutionId::new_v7();
         let started_at = chrono::Utc::now();
         let start_instant = std::time::Instant::now();
-        let endpoint = format!(
-            "postgres://{}/{}",
-            resource.host,
-            resource.database
-        );
+        let endpoint = format!("postgres://{}/{}", resource.host, resource.database);
 
         let dispatch_result = self
             .client
@@ -337,10 +410,7 @@ impl PostgresConnector {
                 let count = resp.body.len();
                 let prev = format!(
                     "PostgreSQL {} on {}/{} succeeded ({})",
-                    op_name,
-                    resource.host,
-                    resource.database,
-                    resp.command_tag
+                    op_name, resource.host, resource.database, resp.command_tag
                 );
                 let exec_res = ExecutionResult::success(&resp.body, prev.clone());
                 (
@@ -421,7 +491,7 @@ impl PostgresConnector {
             }
         };
 
-        let builder = ActionReceiptBuilder::new(canonical_action, decision)
+        let builder = ActionReceiptBuilder::new(canonical_action, &effective_decision)
             .with_approval(approval)
             .with_credential_lease(Some(&lease))
             .with_execution_metadata(
@@ -513,7 +583,8 @@ impl NativeConnector for PostgresConnector {
     ) -> Result<ExecutionResult, ExecutionError> {
         Err(ExecutionError::ConnectorFailed {
             connector: "postgres".to_string(),
-            reason: "Direct NativeConnector::execute is forbidden; use execute_governed pipeline".to_string(),
+            reason: "Direct NativeConnector::execute is forbidden; use execute_governed pipeline"
+                .to_string(),
         })
     }
 }

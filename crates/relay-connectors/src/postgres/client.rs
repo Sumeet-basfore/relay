@@ -8,7 +8,7 @@
 
 use std::sync::Arc;
 
-use postgres_rustls::{MakeTlsConnector, set_postgresql_alpn};
+use postgres_rustls::{set_postgresql_alpn, MakeTlsConnector};
 use rustls::ClientConfig;
 use tokio::time::timeout;
 use tokio_postgres::{Client, NoTls, Row};
@@ -76,7 +76,8 @@ impl PostgresClient {
             config.application_name("relay-postgres-connector");
 
             if self.config.allows_plaintext(&resource.host) {
-                let (client, connection) = config.connect(NoTls).await.map_err(map_connect_error)?;
+                let (client, connection) =
+                    config.connect(NoTls).await.map_err(map_connect_error)?;
                 tokio::spawn(async move {
                     if let Err(err) = connection.await {
                         tracing::debug!(error = %err, "PostgreSQL connection driver task ended");
@@ -84,12 +85,11 @@ impl PostgresClient {
                 });
                 Ok(client)
             } else {
-                let connector = self
-                    .tls_connector
-                    .as_ref()
-                    .ok_or_else(|| PostgresError::TlsFailure(
+                let connector = self.tls_connector.as_ref().ok_or_else(|| {
+                    PostgresError::TlsFailure(
                         "TLS connector not configured for remote PostgreSQL target".to_string(),
-                    ))?;
+                    )
+                })?;
                 let (client, connection) = config
                     .connect(connector.clone())
                     .await
@@ -132,9 +132,10 @@ impl PostgresClient {
         let exec_fut = async {
             match operation {
                 SqlOperation::Select => self.execute_select(&client, canonical_sql).await,
-                SqlOperation::Insert | SqlOperation::Update | SqlOperation::Delete | SqlOperation::Ddl => {
-                    self.execute_mutating(&client, canonical_sql).await
-                }
+                SqlOperation::Insert
+                | SqlOperation::Update
+                | SqlOperation::Delete
+                | SqlOperation::Ddl => self.execute_mutating(&client, canonical_sql).await,
                 SqlOperation::Transaction => Err(PostgresError::UnsupportedStatement(
                     "Transaction control statements are not supported in MVP".to_string(),
                 )),
@@ -147,7 +148,9 @@ impl PostgresClient {
                 if is_mutating {
                     Err(PostgresError::AmbiguousMutationOutcome {
                         operation: operation_name.to_string(),
-                        reason: format!("Query timed out after {query_timeout:?}; mutation may have committed"),
+                        reason: format!(
+                            "Query timed out after {query_timeout:?}; mutation may have committed"
+                        ),
                     })
                 } else {
                     Err(PostgresError::Timeout {
@@ -186,7 +189,7 @@ impl PostgresClient {
         Ok(PostgresResponse {
             body,
             row_count: rows.len(),
-            command_tag: format!("SELECT {}" , rows.len()),
+            command_tag: format!("SELECT {}", rows.len()),
         })
     }
 
@@ -204,7 +207,8 @@ impl PostgresClient {
             "rows_affected": affected,
             "command_tag": format!("OK {}", affected),
         });
-        let body_bytes = serde_json::to_vec(&body).map_err(|e| PostgresError::QueryError(e.to_string()))?;
+        let body_bytes =
+            serde_json::to_vec(&body).map_err(|e| PostgresError::QueryError(e.to_string()))?;
 
         Ok(PostgresResponse {
             body: body_bytes,
@@ -225,10 +229,7 @@ fn sanitize_identifier(identifier: &str) -> String {
     }
 }
 
-fn serialize_rows_to_json(
-    rows: &[Row],
-    max_columns: usize,
-) -> Result<Vec<u8>, PostgresError> {
+fn serialize_rows_to_json(rows: &[Row], max_columns: usize) -> Result<Vec<u8>, PostgresError> {
     let mut output = Vec::with_capacity(rows.len());
     for row in rows {
         if row.len() > max_columns {
@@ -242,10 +243,22 @@ fn serialize_rows_to_json(
         for (idx, column) in row.columns().iter().enumerate() {
             let name = column.name();
             let val: serde_json::Value = match column.type_().name() {
-                "bool" => row.try_get::<_, bool>(idx).map(serde_json::Value::from).unwrap_or(serde_json::Value::Null),
-                "int2" | "int4" => row.try_get::<_, i32>(idx).map(|v| serde_json::Value::from(v as i64)).unwrap_or(serde_json::Value::Null),
-                "int8" => row.try_get::<_, i64>(idx).map(serde_json::Value::from).unwrap_or(serde_json::Value::Null),
-                "float4" | "float8" | "numeric" => row.try_get::<_, f64>(idx).map(serde_json::Value::from).unwrap_or(serde_json::Value::Null),
+                "bool" => row
+                    .try_get::<_, bool>(idx)
+                    .map(serde_json::Value::from)
+                    .unwrap_or(serde_json::Value::Null),
+                "int2" | "int4" => row
+                    .try_get::<_, i32>(idx)
+                    .map(|v| serde_json::Value::from(v as i64))
+                    .unwrap_or(serde_json::Value::Null),
+                "int8" => row
+                    .try_get::<_, i64>(idx)
+                    .map(serde_json::Value::from)
+                    .unwrap_or(serde_json::Value::Null),
+                "float4" | "float8" | "numeric" => row
+                    .try_get::<_, f64>(idx)
+                    .map(serde_json::Value::from)
+                    .unwrap_or(serde_json::Value::Null),
                 "text" | "varchar" | "bpchar" | "name" => row
                     .try_get::<_, String>(idx)
                     .map(serde_json::Value::from)

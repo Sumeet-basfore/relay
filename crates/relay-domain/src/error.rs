@@ -62,6 +62,9 @@ pub enum DomainError {
 
     #[error("Serialization failed: {0}")]
     SerializationFailed(String),
+
+    #[error("Policy or binding violation: {0}")]
+    PolicyViolation(String),
 }
 
 /// JSON-RPC 2.0 and MCP transport errors
@@ -310,6 +313,15 @@ pub enum ExecutionError {
 
     #[error("Filesystem I/O error: {0}")]
     FilesystemError(String),
+
+    #[error("Egress proxy error: {0}")]
+    EgressProxyError(String),
+
+    #[error("Sandbox setup failed: {0}")]
+    SandboxSetupFailed(String),
+
+    #[error("Egress destination blocked: {0}")]
+    EgressBlocked(String),
 }
 
 /// SQLite Ledger, WAL, and append-only hash chain errors
@@ -406,6 +418,26 @@ pub enum InvariantViolationError {
 
     #[error("Invariant SI-009 violation: Ledger tampering or sequence gap detected")]
     LedgerTampering,
+
+    #[error("Invariant SI-019 violation: External egress attempted without prior destination authorization")]
+    ExternalEgressUnauthorized,
+
+    #[error("Invariant SI-020 violation: Ephemeral proxy session expired, invalid, or unbound to action hash")]
+    EphemeralProxySessionInvalid,
+
+    #[error(
+        "Invariant SI-021 violation: Real target credential exposed to subprocess environment"
+    )]
+    TargetCredentialLeak,
+
+    #[error("Invariant SI-022 violation: Outbound request attempted to access blocked cloud metadata or private IP")]
+    BlockedMetadataOrPrivateIp,
+
+    #[error("Invariant SI-023 violation: Linux network namespace isolation compromised or bypass detected")]
+    NetworkNamespaceIsolationFailed,
+
+    #[error("Invariant SI-024 violation: Sandbox initialization failed to fail-closed")]
+    SandboxFailClosedViolation,
 
     #[error("Invariant violation: {0}")]
     Custom(String),

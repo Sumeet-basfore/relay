@@ -1,0 +1,2 @@
+CONFIDENTIAL: Protected Enterprise Asset - Access Strictly Restricted
+Under SI-004 and Cedar policy forbid_protected_assets, agent reads to this file are denied fail-closed.

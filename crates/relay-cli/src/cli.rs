@@ -125,11 +125,11 @@ pub enum SecretSubcommands {
 #[derive(Args, Debug)]
 pub struct VerifyArgs {
     /// Path to SQLite ledger database file [default: config storage.ledger_path]
-    #[arg(long = "db-path")]
+    #[arg(long = "db-path", alias = "ledger", alias = "ledger-path")]
     pub db_path: Option<PathBuf>,
 
     /// Start verification from specific sequence number
-    #[arg(long = "from")]
+    #[arg(long = "from", alias = "from-seq")]
     pub from_seq: Option<u64>,
 
     /// Path to Ed25519 public key for verification
@@ -144,7 +144,12 @@ pub struct VerifyArgs {
 #[derive(Args, Debug)]
 pub struct ReceiptArgs {
     /// Path to SQLite ledger database file [default: config storage.ledger_path]
-    #[arg(long = "db-path")]
+    #[arg(
+        long = "db-path",
+        alias = "ledger",
+        alias = "ledger-path",
+        global = true
+    )]
     pub db_path: Option<PathBuf>,
 
     #[command(subcommand)]

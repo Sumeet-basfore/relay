@@ -33,6 +33,21 @@ pub struct GatewayConfig {
 }
 
 impl GatewayConfig {
+    pub fn new(
+        session_id: SessionId,
+        interceptor: Arc<dyn ToolCallInterceptor>,
+        canonicalizer: Arc<ActionCanonicalizer>,
+    ) -> Self {
+        Self {
+            session_id,
+            interceptor,
+            canonicalizer,
+            max_frame_bytes: crate::frame::MAX_FRAME_SIZE_BYTES,
+            startup_timeout: DEFAULT_STARTUP_TIMEOUT,
+            shutdown_grace_period: DEFAULT_SHUTDOWN_GRACE_PERIOD,
+        }
+    }
+
     pub fn with_pass_through(session_id: SessionId) -> Self {
         Self {
             session_id,
@@ -53,6 +68,26 @@ impl GatewayConfig {
             interceptor: Arc::new(crate::intercept::PolicyToolCallInterceptor::new(
                 policy_engine,
             )),
+            canonicalizer: Arc::new(ActionCanonicalizer::default()),
+            max_frame_bytes: crate::frame::MAX_FRAME_SIZE_BYTES,
+            startup_timeout: DEFAULT_STARTUP_TIMEOUT,
+            shutdown_grace_period: DEFAULT_SHUTDOWN_GRACE_PERIOD,
+        }
+    }
+
+    pub fn with_policy_and_approval(
+        session_id: SessionId,
+        policy_engine: Arc<dyn relay_domain::PolicyEngine>,
+        approval_provider: Arc<dyn relay_domain::ApprovalProvider>,
+    ) -> Self {
+        Self {
+            session_id,
+            interceptor: Arc::new(
+                crate::intercept::PolicyToolCallInterceptor::with_approval_provider(
+                    policy_engine,
+                    approval_provider,
+                ),
+            ),
             canonicalizer: Arc::new(ActionCanonicalizer::default()),
             max_frame_bytes: crate::frame::MAX_FRAME_SIZE_BYTES,
             startup_timeout: DEFAULT_STARTUP_TIMEOUT,

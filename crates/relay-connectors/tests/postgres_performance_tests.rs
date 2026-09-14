@@ -1,7 +1,7 @@
 //! Performance characterization for PostgreSQL connector local overhead.
 
 use relay_canonical::{ActionCanonicalizer, SqlNormalizer, ToolIdentity};
-use relay_connectors::postgres::{PostgresClientConfig, validate_supported_surface};
+use relay_connectors::postgres::{validate_supported_surface, PostgresClientConfig};
 use relay_domain::PrincipalId;
 use std::time::Instant;
 
@@ -44,7 +44,10 @@ fn test_postgres_local_overhead_characterization() {
     let canonicalize_ms = start.elapsed().as_millis();
 
     // Local overhead targets (excluding remote PostgreSQL latency)
-    assert!(normalize_ms < 5_000, "SQL normalization too slow: {normalize_ms}ms");
+    assert!(
+        normalize_ms < 5_000,
+        "SQL normalization too slow: {normalize_ms}ms"
+    );
     assert!(
         canonicalize_ms < 10_000,
         "Canonicalization too slow: {canonicalize_ms}ms"

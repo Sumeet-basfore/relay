@@ -1,11 +1,11 @@
 //! Unit tests for PostgreSQL connector classification, binding, and scope enforcement.
 
 use relay_canonical::{SqlNormalizer, SqlOperation};
-use relay_connectors::postgres::{
-    PostgresClientConfig, PostgresCredentials, PostgresResource, validate_supported_surface,
-};
 use relay_connectors::postgres::scope::{
     is_mutating_operation, validate_operation_class, validate_table_scope,
+};
+use relay_connectors::postgres::{
+    validate_supported_surface, PostgresClientConfig, PostgresCredentials, PostgresResource,
 };
 
 #[test]

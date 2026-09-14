@@ -1,0 +1,2 @@
+Hello from Relay Golden Demo - Public Authorized Data
+All reads to this resource are permitted under Cedar policy permit_public_fs_read.

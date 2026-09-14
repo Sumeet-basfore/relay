@@ -8,8 +8,10 @@ pub mod action;
 pub mod approval;
 pub mod authorization;
 pub mod credential;
+pub mod egress;
 pub mod error;
 pub mod execution;
+pub mod exit_code;
 pub mod id;
 pub mod ledger;
 pub mod principal;
@@ -21,15 +23,23 @@ pub mod tool;
 pub mod traits;
 
 pub use action::{Action, ActionState, ExecutionEnvironment, RequestedAction};
-pub use approval::{Approval, ApprovalState};
+pub use approval::{
+    Approval, ApprovalMechanism, ApprovalRequest, ApprovalState, HeadlessApprovalProvider,
+    MockApprovalProvider,
+};
 pub use authorization::{AuthorizationRequest, PolicyDecision, PolicyDecisionType};
 pub use credential::{CredentialLease, CredentialProviderType, CredentialRequest, LeaseState};
+pub use egress::{
+    EgressDecision, EgressOutcome, EgressRequest, NetworkEndpoint, ProxyLease, ProxySessionId,
+    ProxySessionState,
+};
 pub use error::{
     ApprovalError, CanonicalizationError, CredentialError, CryptoError, DomainError,
     ExecutionError, InvariantViolationError, LedgerError, PolicyError, ProtocolError, RelayError,
     ValidationError,
 };
 pub use execution::{Execution, ExecutionResult, ExecutionRoute, ExecutionState};
+pub use exit_code::ExitCode;
 pub use id::{
     ActionHash, ActionId, AgentId, ApprovalId, DecisionId, Digest, ExecutionId, LeaseId,
     OutputHash, PolicySetDigest, PrincipalId, ReceiptId, SchemaDigest, SequenceNumber, SessionId,

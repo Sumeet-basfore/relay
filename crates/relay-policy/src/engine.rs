@@ -208,11 +208,8 @@ impl PolicyEngine for CedarPolicyEngine {
         request: &AuthorizationRequest,
     ) -> Result<PolicyDecision, PolicyError> {
         // Enforce SI-014: Fail-closed on panic during evaluation
-        let this = self.clone();
-        let req = request.clone();
-
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
-            this.evaluate_internal(&req)
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.evaluate_internal(request)
         }));
 
         match result {

@@ -2883,6 +2883,7 @@ name = "relay-cli"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
+ "async-trait",
  "chrono",
  "clap",
  "color-eyre",
@@ -2897,6 +2898,7 @@ dependencies = [
  "relay-mcp",
  "relay-policy",
  "relay-receipts",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",
@@ -2913,18 +2915,21 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "hex",
  "postgres-types",
  "postgres_rustls",
  "relay-canonical",
  "relay-credentials",
  "relay-domain",
  "relay-ledger",
+ "relay-mcp",
  "relay-policy",
  "relay-receipts",
  "reqwest",
  "rustls",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "tempfile",
  "testcontainers",
  "testcontainers-modules",
@@ -2933,8 +2938,10 @@ dependencies = [
  "tokio-postgres",
  "tracing",
  "tracing-subscriber",
+ "uuid",
  "webpki-roots 0.26.11",
  "wiremock",
+ "zeroize",
 ]
 
 [[package]]
@@ -3011,6 +3018,8 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "async-trait",
+ "base64 0.22.1",
+ "chrono",
  "libc",
  "proptest",
  "relay-canonical",
@@ -3021,6 +3030,7 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

@@ -68,8 +68,40 @@ impl GitHubConnector {
         decision: &PolicyDecision,
         credential_broker: &dyn CredentialBroker,
     ) -> Result<ExecutionResult, ExecutionError> {
+        self.execute_governed_with_approval(canonical_action, decision, None, credential_broker)
+            .await
+    }
+
+    pub async fn execute_governed_with_approval(
+        &self,
+        canonical_action: &CanonicalAction,
+        decision: &PolicyDecision,
+        approval: Option<&Approval>,
+        credential_broker: &dyn CredentialBroker,
+    ) -> Result<ExecutionResult, ExecutionError> {
         // 1. Validate policy authorization
-        if decision.decision != PolicyDecisionType::Allow {
+        if decision.decision == PolicyDecisionType::ApprovalRequired {
+            match approval {
+                Some(appr) => {
+                    if appr.action_hash != canonical_action.action_hash {
+                        return Err(GitHubError::ActionHashMismatch {
+                            expected: canonical_action.action_hash.to_hex(),
+                            actual: appr.action_hash.to_hex(),
+                        }
+                        .into());
+                    }
+                    if appr.state != ApprovalState::Approved {
+                        return Err(GitHubError::UnauthorizedExecution.into());
+                    }
+                    if appr.is_expired() {
+                        return Err(GitHubError::UnauthorizedExecution.into());
+                    }
+                }
+                None => {
+                    return Err(GitHubError::UnauthorizedExecution.into());
+                }
+            }
+        } else if decision.decision != PolicyDecisionType::Allow {
             tracing::warn!(
                 action_hash = %decision.action_hash.to_hex(),
                 decision = ?decision.decision,
@@ -77,6 +109,15 @@ impl GitHubConnector {
             );
             return Err(GitHubError::UnauthorizedExecution.into());
         }
+
+        let effective_decision =
+            if decision.decision == PolicyDecisionType::ApprovalRequired && approval.is_some() {
+                let mut d = decision.clone();
+                d.decision = PolicyDecisionType::Allow;
+                d
+            } else {
+                decision.clone()
+            };
 
         // 2. Enforce ActionHash equivalence (SI-005, SI-006)
         if canonical_action.action_hash != decision.action_hash {
@@ -152,7 +193,7 @@ impl GitHubConnector {
         );
 
         let (lease, secret) = credential_broker
-            .acquire_lease(&cred_req, decision)
+            .acquire_lease(&cred_req, &effective_decision)
             .await
             .map_err(|e| GitHubError::CredentialError(e.to_string()))?;
 
@@ -243,8 +284,32 @@ impl GitHubConnector {
         credential_broker: &dyn CredentialBroker,
         signer: &Ed25519ReceiptSigner,
     ) -> Result<(ExecutionResult, ActionReceipt), (ExecutionError, Option<ActionReceipt>)> {
-        // 1. Validate policy authorization (fails closed on Deny / ApprovalRequired)
-        if decision.decision != PolicyDecisionType::Allow {
+        // 1. Validate policy authorization (fails closed on Deny / ApprovalRequired without approval)
+        if decision.decision == PolicyDecisionType::ApprovalRequired {
+            match approval {
+                Some(appr) => {
+                    if appr.action_hash != canonical_action.action_hash {
+                        return Err((
+                            GitHubError::ActionHashMismatch {
+                                expected: canonical_action.action_hash.to_hex(),
+                                actual: appr.action_hash.to_hex(),
+                            }
+                            .into(),
+                            None,
+                        ));
+                    }
+                    if appr.state != ApprovalState::Approved {
+                        return Err((GitHubError::UnauthorizedExecution.into(), None));
+                    }
+                    if appr.is_expired() {
+                        return Err((GitHubError::UnauthorizedExecution.into(), None));
+                    }
+                }
+                None => {
+                    return Err((GitHubError::UnauthorizedExecution.into(), None));
+                }
+            }
+        } else if decision.decision != PolicyDecisionType::Allow {
             tracing::warn!(
                 action_hash = %decision.action_hash.to_hex(),
                 decision = ?decision.decision,
@@ -252,6 +317,15 @@ impl GitHubConnector {
             );
             return Err((GitHubError::UnauthorizedExecution.into(), None));
         }
+
+        let effective_decision =
+            if decision.decision == PolicyDecisionType::ApprovalRequired && approval.is_some() {
+                let mut d = decision.clone();
+                d.decision = PolicyDecisionType::Allow;
+                d
+            } else {
+                decision.clone()
+            };
 
         // 2. Enforce ActionHash equivalence (SI-005, SI-006)
         if canonical_action.action_hash != decision.action_hash {
@@ -268,23 +342,6 @@ impl GitHubConnector {
                 .into(),
                 None,
             ));
-        }
-
-        // 3. If approval is present, verify binding and state (SI-011)
-        if let Some(appr) = approval {
-            if appr.action_hash != canonical_action.action_hash {
-                return Err((
-                    GitHubError::ActionHashMismatch {
-                        expected: canonical_action.action_hash.to_hex(),
-                        actual: appr.action_hash.to_hex(),
-                    }
-                    .into(),
-                    None,
-                ));
-            }
-            if appr.state != ApprovalState::Approved {
-                return Err((GitHubError::UnauthorizedExecution.into(), None));
-            }
         }
 
         // 4. Verify namespace
@@ -364,7 +421,10 @@ impl GitHubConnector {
             60, // 60s single-action TTL
         );
 
-        let (lease, secret) = match credential_broker.acquire_lease(&cred_req, decision).await {
+        let (lease, secret) = match credential_broker
+            .acquire_lease(&cred_req, &effective_decision)
+            .await
+        {
             Ok(pair) => pair,
             Err(e) => return Err((GitHubError::CredentialError(e.to_string()).into(), None)),
         };
@@ -624,7 +684,7 @@ impl GitHubConnector {
         };
 
         // 12. Build and sign ActionReceipt
-        let builder = ActionReceiptBuilder::new(canonical_action, decision)
+        let builder = ActionReceiptBuilder::new(canonical_action, &effective_decision)
             .with_approval(approval)
             .with_credential_lease(Some(&lease))
             .with_execution_metadata(

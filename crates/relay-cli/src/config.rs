@@ -83,13 +83,17 @@ impl RelayConfig {
     /// Load configuration from specified path or default locations
     pub fn load(path: Option<&Path>) -> Result<Self, crate::cli_error::CliError> {
         if let Some(p) = path {
-            if p.exists() {
-                let content = std::fs::read_to_string(p)
-                    .map_err(|e| crate::cli_error::CliError::ConfigError(e.to_string()))?;
-                let config: Self = toml::from_str(&content)
-                    .map_err(|e| crate::cli_error::CliError::ConfigError(e.to_string()))?;
-                return Ok(config);
+            if !p.exists() {
+                return Err(crate::cli_error::CliError::ConfigError(format!(
+                    "Configuration file not found: {}",
+                    p.display()
+                )));
             }
+            let content = std::fs::read_to_string(p)
+                .map_err(|e| crate::cli_error::CliError::ConfigError(e.to_string()))?;
+            let config: Self = toml::from_str(&content)
+                .map_err(|e| crate::cli_error::CliError::ConfigError(e.to_string()))?;
+            return Ok(config);
         }
         Ok(Self::default())
     }

@@ -28,25 +28,47 @@ impl SqliteStorageEngine {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, LedgerError> {
         let path_ref = path.as_ref();
 
-        // Ensure parent directory exists
+        // Ensure parent directory exists with 0700 permissions
         if let Some(parent) = path_ref.parent() {
             if !parent.as_os_str().is_empty() && !parent.exists() {
-                std::fs::create_dir_all(parent).map_err(|e| {
-                    LedgerError::ConnectionFailed(format!(
-                        "Failed to create ledger directory '{parent:?}': {e}"
-                    ))
-                })?;
-            }
-
-            // On Unix, ensure directory mode is 0700
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                if let Ok(metadata) = std::fs::metadata(parent) {
-                    let mut perms = metadata.permissions();
-                    perms.set_mode(0o700);
-                    let _ = std::fs::set_permissions(parent, perms);
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::DirBuilderExt;
+                    let mut builder = std::fs::DirBuilder::new();
+                    builder.recursive(true);
+                    builder.mode(0o700);
+                    builder.create(parent).map_err(|e| {
+                        LedgerError::ConnectionFailed(format!(
+                            "Failed to create ledger directory '{parent:?}': {e}"
+                        ))
+                    })?;
                 }
+                #[cfg(not(unix))]
+                {
+                    std::fs::create_dir_all(parent).map_err(|e| {
+                        LedgerError::ConnectionFailed(format!(
+                            "Failed to create ledger directory '{parent:?}': {e}"
+                        ))
+                    })?;
+                }
+            }
+        }
+
+        // On Unix, pre-create the SQLite database file with 0600 permissions if it doesn't exist
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+            if !path_ref.exists() {
+                let _ = std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .create_new(true)
+                    .mode(0o600)
+                    .open(path_ref);
+            } else if let Ok(metadata) = std::fs::metadata(path_ref) {
+                let mut perms = metadata.permissions();
+                perms.set_mode(0o600);
+                let _ = std::fs::set_permissions(path_ref, perms);
             }
         }
 
@@ -56,7 +78,7 @@ impl SqliteStorageEngine {
             ))
         })?;
 
-        // On Unix, ensure database file permissions are 0600
+        // On Unix, ensure database file permissions remain 0600
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

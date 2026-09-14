@@ -74,9 +74,23 @@ impl PostgresClientConfig {
             || host.contains('?')
             || host.contains('#')
             || host.contains(':')
+            || host.contains(';')
+            || host.contains(' ')
+            || host.contains('\n')
+            || host.contains('\r')
         {
             return Err(PostgresError::InvalidEndpoint(format!(
                 "Host '{host}' contains forbidden connection-string metacharacters (SI-007)"
+            )));
+        }
+
+        // Host must be a valid DNS hostname, IPv4, or IPv6 (without brackets)
+        if !host
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '_')
+        {
+            return Err(PostgresError::InvalidEndpoint(format!(
+                "Host '{host}' contains invalid hostname characters"
             )));
         }
 

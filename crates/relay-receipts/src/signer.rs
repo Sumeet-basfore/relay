@@ -41,6 +41,91 @@ impl Ed25519ReceiptSigner {
         }
     }
 
+    /// Initializes a signer from a 64-character hexadecimal seed string.
+    pub fn from_hex(hex_str: &str, key_id: impl Into<String>) -> Result<Self, ReceiptError> {
+        let clean = hex_str.trim();
+        let raw = hex::decode(clean).map_err(|e| {
+            ReceiptError::Crypto(format!("Invalid hex string for signing key: {e}"))
+        })?;
+        if raw.len() != 32 {
+            return Err(ReceiptError::Crypto(format!(
+                "Key hex decoded to {} bytes, expected 32",
+                raw.len()
+            )));
+        }
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&raw);
+        Ok(Self::from_bytes(&arr, key_id))
+    }
+
+    /// Loads a signing key from a file (raw 32 bytes or 64 hex characters).
+    pub fn from_file<P: AsRef<std::path::Path>>(
+        path: P,
+        key_id: impl Into<String>,
+    ) -> Result<Self, ReceiptError> {
+        let path_ref = path.as_ref();
+        let bytes = std::fs::read(path_ref).map_err(|e| {
+            ReceiptError::Crypto(format!(
+                "Failed to read key file '{}': {e}",
+                path_ref.display()
+            ))
+        })?;
+
+        if bytes.len() == 32 {
+            let mut arr = [0u8; 32];
+            arr.copy_from_slice(&bytes);
+            Ok(Self::from_bytes(&arr, key_id))
+        } else if let Ok(s) = std::str::from_utf8(&bytes) {
+            Self::from_hex(s.trim(), key_id)
+        } else {
+            Err(ReceiptError::Crypto(
+                "Key file must contain exactly 32 raw bytes or 64 hex characters".to_string(),
+            ))
+        }
+    }
+
+    /// Saves the private signing key seed bytes to a file with restrictive permissions (0600 on Unix).
+    pub fn save_to_file<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), ReceiptError> {
+        let path_ref = path.as_ref();
+        if let Some(parent) = path_ref.parent() {
+            if !parent.as_os_str().is_empty() && !parent.exists() {
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    ReceiptError::Crypto(format!("Failed to create key directory: {e}"))
+                })?;
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    if let Ok(meta) = std::fs::metadata(parent) {
+                        let mut perms = meta.permissions();
+                        perms.set_mode(0o700);
+                        let _ = std::fs::set_permissions(parent, perms);
+                    }
+                }
+            }
+        }
+
+        let mut opts = std::fs::OpenOptions::new();
+        opts.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            opts.mode(0o600);
+        }
+
+        let mut file = opts.open(path_ref).map_err(|e| {
+            ReceiptError::Crypto(format!(
+                "Failed to create key file '{}': {e}",
+                path_ref.display()
+            ))
+        })?;
+
+        use std::io::Write;
+        file.write_all(self.signing_key.as_bytes())
+            .map_err(|e| ReceiptError::Crypto(format!("Failed to write key material: {e}")))?;
+
+        Ok(())
+    }
+
     /// Returns the active `VerifyingKey`.
     pub fn verifying_key(&self) -> VerifyingKey {
         self.verifying_key
@@ -113,17 +198,6 @@ impl ReceiptSigner for Ed25519ReceiptSigner {
 
     fn export_public_key(&self) -> Vec<u8> {
         self.verifying_key.to_bytes().to_vec()
-    }
-}
-
-mod hex {
-    use std::fmt::Write;
-    pub fn encode(data: [u8; 32]) -> String {
-        let mut s = String::with_capacity(64);
-        for b in data {
-            let _ = write!(s, "{:02x}", b);
-        }
-        s
     }
 }
 

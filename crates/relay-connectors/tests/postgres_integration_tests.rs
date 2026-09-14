@@ -3,7 +3,7 @@
 use relay_canonical::{ActionCanonicalizer, ToolIdentity};
 use relay_connectors::postgres::{PostgresClient, PostgresClientConfig, PostgresConnector};
 use relay_credentials::{InMemoryCredentialProvider, JitCredentialBroker};
-use relay_domain::{CredentialProviderType, PolicyEngine, PrincipalId};
+use relay_domain::{CredentialProviderType, PolicyEngine, PrincipalId, ReceiptSigner};
 use relay_ledger::SqliteLedger;
 use relay_policy::CedarPolicyEngine;
 use relay_receipts::{Ed25519ReceiptSigner, ReceiptVerifier};
@@ -38,10 +38,12 @@ async fn setup_postgres_pipeline(
     let canonicalizer = ActionCanonicalizer::default();
 
     let policy_engine = if extended_policy {
-        let policy_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../policies/default.cedar");
+        let policy_path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../policies/default.cedar");
         let default = std::fs::read_to_string(policy_path).expect("default policy");
-        Arc::new(CedarPolicyEngine::from_str(&format!("{default}\n{EXTENDED_POLICY}"), None).unwrap())
+        Arc::new(
+            CedarPolicyEngine::from_str(&format!("{default}\n{EXTENDED_POLICY}"), None).unwrap(),
+        )
     } else {
         Arc::new(CedarPolicyEngine::default_engine().unwrap())
     };
@@ -67,13 +69,7 @@ async fn setup_postgres_pipeline(
     // Seed schema via direct connection for deterministic tests.
     seed_test_schema(host, port, database).await;
 
-    (
-        canonicalizer,
-        policy_engine,
-        broker,
-        connector,
-        signer,
-    )
+    (canonicalizer, policy_engine, broker, connector, signer)
 }
 
 async fn seed_test_schema(host: &str, port: u16, database: &str) {
@@ -99,7 +95,8 @@ async fn seed_test_schema(host: &str, port: u16, database: &str) {
 
 #[tokio::test]
 async fn test_postgres_select_allowed_full_pipeline() {
-    let container = Postgres::default().start()
+    let container = Postgres::default()
+        .start()
         .await
         .expect("postgres container");
 
@@ -145,18 +142,30 @@ async fn test_postgres_select_allowed_full_pipeline() {
 
     let verifier = ReceiptVerifier::new(signer.verifying_key());
     assert!(verifier
-        .verify_receipt(&receipt, Some(&canonical_action.action_hash), Some(&decision.policy_digest))
+        .verify_receipt(
+            &receipt,
+            Some(&canonical_action.action_hash),
+            Some(&decision.policy_digest)
+        )
         .is_valid());
 
     use relay_domain::Ledger;
     let ledger = SqliteLedger::in_memory().unwrap();
+    let pubkey_bytes: [u8; 32] = signer.export_public_key().try_into().unwrap();
+    let pubkey_hex = hex::encode(pubkey_bytes);
+    ledger
+        .initialize_genesis("01918a20-4321-7000-8000-000000000001", &pubkey_hex)
+        .await
+        .unwrap();
+
     ledger.append(&receipt).await.unwrap();
     assert!(ledger.verify_chain().await.unwrap());
 }
 
 #[tokio::test]
 async fn test_postgres_update_allowed_with_extended_policy() {
-    let container = Postgres::default().start()
+    let container = Postgres::default()
+        .start()
         .await
         .expect("postgres container");
 
@@ -177,7 +186,15 @@ async fn test_postgres_update_allowed_with_extended_policy() {
     });
 
     let canonical_action = canonicalizer
-        .canonicalize(session_id, principal, "tools/call", tool_ident, &args, None, None)
+        .canonicalize(
+            session_id,
+            principal,
+            "tools/call",
+            tool_ident,
+            &args,
+            None,
+            None,
+        )
         .unwrap();
 
     let decision = policy_engine
@@ -195,7 +212,8 @@ async fn test_postgres_update_allowed_with_extended_policy() {
 
 #[tokio::test]
 async fn test_postgres_delete_denied_by_policy() {
-    let container = Postgres::default().start()
+    let container = Postgres::default()
+        .start()
         .await
         .expect("postgres container");
 
@@ -216,7 +234,15 @@ async fn test_postgres_delete_denied_by_policy() {
     });
 
     let canonical_action = canonicalizer
-        .canonicalize(session_id, principal, "tools/call", tool_ident, &args, None, None)
+        .canonicalize(
+            session_id,
+            principal,
+            "tools/call",
+            tool_ident,
+            &args,
+            None,
+            None,
+        )
         .unwrap();
 
     let decision = policy_engine
@@ -234,7 +260,8 @@ async fn test_postgres_delete_denied_by_policy() {
 
 #[tokio::test]
 async fn test_postgres_ddl_denied_by_policy() {
-    let container = Postgres::default().start()
+    let container = Postgres::default()
+        .start()
         .await
         .expect("postgres container");
 
@@ -255,7 +282,15 @@ async fn test_postgres_ddl_denied_by_policy() {
     });
 
     let canonical_action = canonicalizer
-        .canonicalize(session_id, principal, "tools/call", tool_ident, &args, None, None)
+        .canonicalize(
+            session_id,
+            principal,
+            "tools/call",
+            tool_ident,
+            &args,
+            None,
+            None,
+        )
         .unwrap();
 
     let decision = policy_engine
@@ -272,7 +307,8 @@ async fn test_postgres_ddl_denied_by_policy() {
 
 #[tokio::test]
 async fn test_postgres_action_hash_mismatch_blocks_execution() {
-    let container = Postgres::default().start()
+    let container = Postgres::default()
+        .start()
         .await
         .expect("postgres container");
 
@@ -293,7 +329,15 @@ async fn test_postgres_action_hash_mismatch_blocks_execution() {
     });
 
     let canonical_action = canonicalizer
-        .canonicalize(session_id, principal, "tools/call", tool_ident, &args, None, None)
+        .canonicalize(
+            session_id,
+            principal,
+            "tools/call",
+            tool_ident,
+            &args,
+            None,
+            None,
+        )
         .unwrap();
 
     let decision = policy_engine

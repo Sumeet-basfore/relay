@@ -26,6 +26,10 @@ postgres-types = { workspace = true }
 postgres_rustls = { workspace = true }
 rustls = { workspace = true }
 webpki-roots = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+uuid = { workspace = true }
+zeroize = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
@@ -40,3 +44,5 @@ testcontainers = { workspace = true }
 testcontainers-modules = { workspace = true }
 relay-policy = { workspace = true }
 relay-ledger = { workspace = true }
+relay-mcp = { workspace = true }
+hex = { workspace = true }

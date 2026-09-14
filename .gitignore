@@ -13,3 +13,12 @@
 .idea/
 *.swp
 *.bak
+
+# Python artifacts
+__pycache__/
+*.pyc
+
+# Release archives
+dist/*.tar.gz
+dist/*.sha256
+

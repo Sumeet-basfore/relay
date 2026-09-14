@@ -20,19 +20,24 @@ relay-domain = { workspace = true }
 relay-canonical = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+chrono = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = [
     "rt",
     "io-util",
     "io-std",
+    "fs",
     "process",
     "sync",
     "macros",
     "time",
+    "net",
 ] }
 tracing = { workspace = true }
 async-trait = { workspace = true }
 libc = { workspace = true }
+base64 = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 relay-policy = { workspace = true }

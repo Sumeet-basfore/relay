@@ -75,7 +75,7 @@ pub fn create_test_approval(action_hash: ActionHash, state: ApprovalState) -> Ap
         }
         ApprovalState::Denied => {
             let approver = PrincipalId::new("principal:human:security-lead").unwrap();
-            let _ = approval.deny(Some(approver));
+            let _ = approval.deny(Some(approver), None);
         }
         _ => {}
     }

@@ -144,11 +144,11 @@ fn test_approval_state_transitions() {
     assert_eq!(app_approved.approver, Some(approver.clone()));
 
     // Cannot deny after approve
-    assert!(app_approved.deny(Some(approver.clone())).is_err());
+    assert!(app_approved.deny(Some(approver.clone()), None).is_err());
 
     // Deny
     let mut app_denied = approval.clone();
-    app_denied.deny(Some(approver)).expect("Should deny");
+    app_denied.deny(Some(approver), None).expect("Should deny");
     assert_eq!(app_denied.state, ApprovalState::Denied);
 
     // Cancel

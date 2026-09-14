@@ -75,11 +75,29 @@ impl PostgresResource {
     }
 }
 
+use std::fmt;
+use zeroize::Zeroize;
+
 /// Credential payload formats supported by the connector.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct PostgresCredentials {
     pub username: String,
     pub password: String,
+}
+
+impl fmt::Debug for PostgresCredentials {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PostgresCredentials")
+            .field("username", &self.username)
+            .field("password", &"[REDACTED]")
+            .finish()
+    }
+}
+
+impl Drop for PostgresCredentials {
+    fn drop(&mut self) {
+        self.password.zeroize();
+    }
 }
 
 impl PostgresCredentials {
@@ -89,25 +107,31 @@ impl PostgresCredentials {
     /// - JSON: `{"username":"relay","password":"secret"}`
     /// - Delimited: `username:password`
     pub fn from_secret_bytes(secret: &[u8]) -> Result<Self, PostgresError> {
-        let raw = std::str::from_utf8(secret).map_err(|_| PostgresError::CredentialError(
-            "PostgreSQL credential secret must be valid UTF-8".to_string(),
-        ))?;
+        let raw = std::str::from_utf8(secret).map_err(|_| {
+            PostgresError::CredentialError(
+                "PostgreSQL credential secret must be valid UTF-8".to_string(),
+            )
+        })?;
 
         if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(raw) {
             let username = json_val
                 .get("username")
                 .or_else(|| json_val.get("user"))
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| PostgresError::CredentialError(
-                    "PostgreSQL credential JSON missing 'username' field".to_string(),
-                ))?;
+                .ok_or_else(|| {
+                    PostgresError::CredentialError(
+                        "PostgreSQL credential JSON missing 'username' field".to_string(),
+                    )
+                })?;
             let password = json_val
                 .get("password")
                 .or_else(|| json_val.get("pass"))
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| PostgresError::CredentialError(
-                    "PostgreSQL credential JSON missing 'password' field".to_string(),
-                ))?;
+                .ok_or_else(|| {
+                    PostgresError::CredentialError(
+                        "PostgreSQL credential JSON missing 'password' field".to_string(),
+                    )
+                })?;
             return Ok(Self {
                 username: username.to_string(),
                 password: password.to_string(),
@@ -124,7 +148,8 @@ impl PostgresCredentials {
         }
 
         Err(PostgresError::CredentialError(
-            "Unsupported PostgreSQL credential format; expected JSON or username:password".to_string(),
+            "Unsupported PostgreSQL credential format; expected JSON or username:password"
+                .to_string(),
         ))
     }
 }
