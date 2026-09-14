@@ -1,3 +1,6 @@
+# Marketing & Social Media (never push to GitHub)
+marketing/
+
 # Rust build artifacts
 /target
 

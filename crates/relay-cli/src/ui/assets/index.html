@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Relay Security Console</title>
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
+  <a href="#view-container" class="skip-link">Skip to main content</a>
   <div id="app" role="region" aria-label="Relay Security Console Application">
     <div style="display:flex;justify-content:center;align-items:center;min-height:100vh;color:#9ca3af;font-family:sans-serif;">
       <span>Initializing Relay Security Console...</span>
     </div>
   </div>
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+  <div id="modal-container" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;"></div>
   <script src="/assets/app.js"></script>
 </body>
 </html>
