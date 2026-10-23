@@ -49,6 +49,8 @@ cedar-policy = { version = "4.0", default-features = false }
 tokio = { version = "1.38", default-features = false }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 wiremock = { version = "0.6" }
+flate2 = { version = "1.0", default-features = false, features = ["rust_backend"] }
+tar = { version = "0.4", default-features = false }
 
 # Cryptography & Memory Security
 ed25519-dalek = { version = "2.1", default-features = false, features = ["rand_core", "serde", "zeroize"] }

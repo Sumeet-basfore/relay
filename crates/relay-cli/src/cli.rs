@@ -53,6 +53,10 @@ pub enum Commands {
 
     /// Launch the local security console web UI
     Ui(UiArgs),
+
+    /// Check for and install updates to Relay
+    #[command(alias = "upgrade")]
+    Update(UpdateArgs),
 }
 
 #[derive(Args, Debug)]
@@ -217,4 +221,35 @@ pub struct UiArgs {
     /// Specific session auth token to use instead of generating an ephemeral token
     #[arg(long = "token")]
     pub token: Option<String>,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct UpdateArgs {
+    /// Check for available updates without applying them
+    #[arg(long)]
+    pub check: bool,
+
+    /// Target a specific version to install (e.g. 0.2.0 or latest)
+    #[arg(long, default_value = "latest")]
+    pub version: String,
+
+    /// Force reinstall or overwrite even if already on the latest version
+    #[arg(long, short = 'f')]
+    pub force: bool,
+
+    /// Automatically proceed without confirmation prompts
+    #[arg(long, short = 'y')]
+    pub yes: bool,
+
+    /// Install from a local .tar.gz distribution archive (for air-gapped systems)
+    #[arg(long)]
+    pub from_file: Option<PathBuf>,
+
+    /// Override binary installation path [default: current executable or ~/.local/bin/relay]
+    #[arg(long)]
+    pub binary_path: Option<PathBuf>,
+
+    /// Custom repository release endpoint URL
+    #[arg(long)]
+    pub release_url: Option<String>,
 }

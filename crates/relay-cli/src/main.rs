@@ -4,7 +4,7 @@ use relay_cli::cli::{Cli, Commands, PolicySubcommands};
 use relay_cli::cli_error::CliError;
 use relay_cli::config::RelayConfig;
 use relay_cli::{
-    doctor, logging, policy_scaffold, receipt_cmd, run, secret_cmd, ui_cmd, verify_cmd,
+    doctor, logging, policy_scaffold, receipt_cmd, run, secret_cmd, ui_cmd, update_cmd, verify_cmd,
 };
 
 #[tokio::main]
@@ -126,6 +126,10 @@ async fn run_app(cli: Cli, config: RelayConfig) -> Result<(), CliError> {
         }
         Commands::Doctor => {
             doctor::run_doctor(&config)?;
+            Ok(())
+        }
+        Commands::Update(args) => {
+            update_cmd::execute(args, cli.json).await?;
             Ok(())
         }
     }

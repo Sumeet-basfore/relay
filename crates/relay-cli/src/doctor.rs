@@ -144,6 +144,7 @@ pub fn run_doctor(config: &RelayConfig) -> Result<(), crate::cli_error::CliError
     );
 
     println!("Egress Sandbox Mode : {}", report.egress_sandbox_mode);
+    println!("Update Status       : Run 'relay update --check' to verify latest release");
     println!("Status              : {}", report.status_message);
     println!("=====================================================");
 

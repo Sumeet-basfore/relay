@@ -11,4 +11,5 @@ pub mod run;
 pub mod secret_cmd;
 pub mod ui;
 pub mod ui_cmd;
+pub mod update_cmd;
 pub mod verify_cmd;

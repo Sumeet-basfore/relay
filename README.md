@@ -269,6 +269,22 @@ Audit the SQLite SHA-256 hash-chain and Ed25519 digital signatures offline:
 relay verify --ledger .relay/ledger.db
 ```
 
+### 7. Check for and Install Updates
+Relay includes a native, cryptographically-verified in-place updater (with `upgrade` alias):
+```bash
+# Check if a newer version is available without applying it
+relay update --check
+
+# Download, verify SHA-256 integrity, and atomically upgrade Relay
+relay update
+
+# Target a specific version or force re-installation
+relay update --version 0.2.0 --force
+
+# Air-gapped / offline installation from a local distribution package
+relay update --from-file ./relay-v0.2.0-x86_64-unknown-linux-gnu.tar.gz
+```
+
 ---
 
 ## Automated Golden Reference Demo

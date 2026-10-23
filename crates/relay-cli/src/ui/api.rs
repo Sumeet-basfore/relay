@@ -724,6 +724,17 @@ pub async fn handle_api_request(
             Ok((200, "application/json", serde_json::to_vec(&resp).unwrap()))
         }
 
+        ("GET", "/api/v1/update") => {
+            let resp = json!({
+                "current_version": env!("CARGO_PKG_VERSION"),
+                "channel": "stable",
+                "repository": "https://github.com/Sumeet-basfore/relay",
+                "command": "relay update",
+                "instructions": "Execute 'relay update' in your terminal to check for and apply binary updates.",
+            });
+            Ok((200, "application/json", serde_json::to_vec(&resp).unwrap()))
+        }
+
         _ => Err((404, "{\"error\":\"Endpoint not found\"}".to_string())),
     }
 }
