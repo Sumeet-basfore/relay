@@ -1,7 +1,8 @@
-// Relay Local Security Console Application (CR002)
+// Relay Local Security Console Application
 // Zero External Dependencies - 100% Local Loopback Execution
+// High-Contrast, Authoritative Security UX (Deslopped, WCAG AAA)
 
-(function() {
+(function () {
   'use strict';
 
   // State
@@ -20,11 +21,49 @@
     { id: 'receipts', name: 'Receipts', shortcut: '3' },
     { id: 'ledger', name: 'Ledger', shortcut: '4' },
     { id: 'policies', name: 'Policies', shortcut: '5' },
-    { id: 'security', name: 'Security', shortcut: '6' },
-    { id: 'egress', name: 'Egress', shortcut: '7' },
-    { id: 'connectors', name: 'Connectors', shortcut: '8' },
-    { id: 'doctor', name: 'Doctor', shortcut: '9' },
+    { id: 'secrets', name: 'Secrets', shortcut: '6' },
+    { id: 'security', name: 'Security', shortcut: '7' },
+    { id: 'egress', name: 'Egress', shortcut: '8' },
+    { id: 'connectors', name: 'Connectors', shortcut: '9' },
+    { id: 'doctor', name: 'Doctor', shortcut: '0' },
   ];
+
+  // Helper: Vector SVG Icons (Zero Emoji Slop)
+  function icon(name, size = 16) {
+    const s = size;
+    switch (name) {
+      case 'shield':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+      case 'check':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+      case 'alert':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+      case 'x':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+      case 'info':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+      case 'copy':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+      case 'key':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9M3 21l9-9a5 5 0 1 0-7.07-7.07L3 21z"/></svg>`;
+      case 'lock':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+      case 'search':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+      case 'refresh':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
+      case 'terminal':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`;
+      case 'database':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`;
+      case 'file':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+      case 'layers':
+        return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`;
+      default:
+        return '';
+    }
+  }
 
   // Helper: Escapes text for safe HTML rendering (XSS mitigation)
   function escapeHtml(str) {
@@ -34,10 +73,10 @@
     return div.innerHTML;
   }
 
-  // Helper: Truncate hash
+  // Helper: Truncate hash with ellipsis
   function truncHash(str, len = 16) {
     if (!str) return '';
-    return str.length > len ? str.substring(0, len) + '...' : str;
+    return str.length > len ? str.substring(0, len) + '…' : str;
   }
 
   // Helper: Format ISO timestamp
@@ -59,33 +98,28 @@
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
 
-    const iconMap = {
-      success: '✓',
-      warning: '⚠',
-      error: '✗',
-      info: 'ℹ'
-    };
+    let iconName = 'info';
+    if (type === 'success') iconName = 'check';
+    if (type === 'warning') iconName = 'alert';
+    if (type === 'error') iconName = 'x';
 
     toast.innerHTML = `
-      <div style="display:flex;align-items:center;gap:0.65rem;">
-        <span style="font-weight:bold;font-size:1rem;">${iconMap[type] || 'ℹ'}</span>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span style="display:inline-flex;color:currentColor;">${icon(iconName, 16)}</span>
         <span>${escapeHtml(message)}</span>
       </div>
-      <button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 0.25rem;" aria-label="Close">×</button>
+      <button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;display:inline-flex;padding:0.2rem;" aria-label="Dismiss">${icon('x', 14)}</button>
     `;
 
-    toast.querySelector('button').addEventListener('click', () => {
-      toast.remove();
-    });
-
+    toast.querySelector('button').addEventListener('click', () => toast.remove());
     container.appendChild(toast);
 
     setTimeout(() => {
       if (toast.parentNode) {
         toast.style.opacity = '0';
-        toast.style.transform = 'translateY(8px)';
-        toast.style.transition = 'all 0.2s ease';
-        setTimeout(() => toast.remove(), 200);
+        toast.style.transform = 'translateY(6px)';
+        toast.style.transition = 'all 0.15s ease';
+        setTimeout(() => toast.remove(), 150);
       }
     }, duration);
   }
@@ -100,51 +134,49 @@
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
-        textarea.style.left = '-9999px';
+        textarea.style.opacity = '0';
         document.body.appendChild(textarea);
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
       }
-      showToast(`Copied ${label} to clipboard`, 'success');
+      showToast(`${label} copied to clipboard`, 'success', 2000);
     } catch (err) {
-      showToast(`Failed to copy: ${err.message}`, 'error');
+      showToast(`Copy failed: ${err.message}`, 'error');
     }
   }
 
-  // Modal Dialog Manager
-  function openModal({ title, body, onConfirm, confirmText = 'Confirm', confirmClass = 'btn-primary' }) {
+  // Modal Dialog System
+  function openModal({ title, body, footer = null, onConfirm = null }) {
     const container = document.getElementById('modal-container');
     if (!container) return;
 
+    container.style.display = 'flex';
+    container.setAttribute('aria-hidden', 'false');
+    container.className = 'modal-overlay';
+
     container.innerHTML = `
-      <div class="modal-backdrop" id="modal-backdrop-el">
-        <div class="modal-dialog" role="dialog" aria-labelledby="modal-dialog-title">
-          <div class="modal-header">
-            <h2 class="modal-title" id="modal-dialog-title">${escapeHtml(title)}</h2>
-            <button class="btn-copy" id="modal-close-btn" aria-label="Close modal">✕</button>
-          </div>
-          <div class="modal-body">${body}</div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary btn-sm" id="modal-cancel-btn">Close</button>
-            ${onConfirm ? `<button class="btn ${confirmClass} btn-sm" id="modal-confirm-btn">${escapeHtml(confirmText)}</button>` : ''}
-          </div>
+      <div class="modal-content" role="document">
+        <div class="modal-header">
+          <h2 class="modal-title">${title}</h2>
+          <button id="modal-close-btn" class="btn btn-secondary btn-sm" aria-label="Close dialog" style="padding:0.3rem;">${icon('x', 14)}</button>
+        </div>
+        <div class="modal-body">${body}</div>
+        <div class="modal-footer">
+          ${footer ? footer : `
+            <button id="modal-cancel-btn" class="btn btn-secondary">Close</button>
+            ${onConfirm ? `<button id="modal-confirm-btn" class="btn btn-primary">Confirm</button>` : ''}
+          `}
         </div>
       </div>
     `;
-    container.style.display = 'block';
-    container.setAttribute('aria-hidden', 'false');
-
-    const closeModal = () => {
-      container.style.display = 'none';
-      container.setAttribute('aria-hidden', 'true');
-      container.innerHTML = '';
-    };
 
     document.getElementById('modal-close-btn').addEventListener('click', closeModal);
-    document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
-    document.getElementById('modal-backdrop-el').addEventListener('click', (e) => {
-      if (e.target.id === 'modal-backdrop-el') closeModal();
+    const cancelBtn = document.getElementById('modal-cancel-btn');
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    container.addEventListener('click', (e) => {
+      if (e.target === container) closeModal();
     });
 
     if (onConfirm) {
@@ -168,37 +200,37 @@
   function showShortcutsModal() {
     const body = `
       <div style="font-size:0.875rem;line-height:1.7;">
-        <p style="color:var(--text-secondary);margin-bottom:1rem;">Keyboard shortcuts enable rapid operator navigation and inspection without a mouse:</p>
-        <div style="display:grid;grid-template-columns:auto 1fr;gap:0.75rem 1.25rem;align-items:center;">
-          <div><kbd>1</kbd> .. <kbd>9</kbd></div><div>Switch active view tab (Overview, Activity, Receipts...)</div>
-          <div><kbd>R</kbd></div><div>Refresh current view data</div>
-          <div><kbd>/</kbd></div><div>Focus search/filter box in active view</div>
-          <div><kbd>Esc</kbd></div><div>Close open modals or detail views</div>
-          <div><kbd>?</kbd></div><div>Show this keyboard shortcuts guide</div>
+        <p style="color:var(--text-secondary);margin-bottom:1rem;">Keyboard shortcuts enable rapid operator navigation without mouse interaction:</p>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:0.65rem 1.25rem;align-items:center;">
+          <div><kbd>1</kbd> .. <kbd>9</kbd>, <kbd>0</kbd></div><div>Switch views (Overview, Activity, Receipts, Ledger, Policies, Secrets...)</div>
+          <div><kbd>R</kbd></div><div>Refresh active view data</div>
+          <div><kbd>/</kbd></div><div>Focus search / filter box in current view</div>
+          <div><kbd>Esc</kbd></div><div>Close modal inspector or dialog</div>
+          <div><kbd>?</kbd></div><div>Open this keyboard shortcut reference</div>
         </div>
       </div>
     `;
-    openModal({ title: 'Keyboard Navigation Shortcuts', body });
+    openModal({ title: `${icon('terminal', 16)} Keyboard Navigation`, body });
   }
 
-  // Cedar syntax highlighter for displaying policy text
+  // Cedar syntax highlighter
   function highlightCedar(code) {
     if (!code) return '';
     const lines = code.split('\n');
     return lines.map(line => {
       let l = escapeHtml(line);
       if (l.trim().startsWith('//')) {
-        return `<span class="cedar-comment">${l}</span>`;
+        return `<span class="cedar-cmt">${l}</span>`;
       }
-      l = l.replace(/"([^"]*)"/g, '<span class="cedar-string">"$1"</span>');
-      l = l.replace(/\b(permit|forbid|when|unless)\b/g, '<span class="cedar-keyword">$1</span>');
-      l = l.replace(/\b(principal|action|resource|context)\b/g, '<span class="cedar-entity">$1</span>');
-      l = l.replace(/\b(is|in|like|has)\b/g, '<span class="cedar-action">$1</span>');
+      l = l.replace(/"([^"]*)"/g, '<span class="cedar-str">"$1"</span>');
+      l = l.replace(/\b(permit|forbid|when|unless)\b/g, '<span class="cedar-kw">$1</span>');
+      l = l.replace(/\b(principal|action|resource|context)\b/g, '<span class="cedar-ent">$1</span>');
+      l = l.replace(/\b(is|in|like|has)\b/g, '<span class="cedar-act">$1</span>');
       return l;
     }).join('\n');
   }
 
-  // API Client with automatic session & CSRF header injection
+  // API Client with session and CSRF enforcement
   async function api(path, options = {}) {
     const headers = options.headers || {};
     if (sessionToken) {
@@ -229,9 +261,7 @@
     const token = urlParams.get('token');
 
     if (token) {
-      // Immediately scrub the token from browser URL and history
       window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
-
       try {
         const data = await fetch('/api/v1/auth/session', {
           method: 'POST',
@@ -249,12 +279,11 @@
         startApp();
         return;
       } catch (err) {
-        renderAuthScreen('Invalid or expired bootstrap token: ' + err.message);
+        renderAuthScreen('Invalid or expired authentication token. Please launch the console via `relay ui`.');
         return;
       }
     }
 
-    // Try restoring from sessionStorage
     const savedSess = sessionStorage.getItem('relay_sess');
     const savedCsrf = sessionStorage.getItem('relay_csrf');
     if (savedSess && savedCsrf) {
@@ -265,8 +294,6 @@
         startApp();
         return;
       } catch {
-        sessionToken = null;
-        csrfToken = null;
         sessionStorage.removeItem('relay_sess');
         sessionStorage.removeItem('relay_csrf');
       }
@@ -275,36 +302,59 @@
     renderAuthScreen();
   }
 
+  // Authentication Form Screen
   function renderAuthScreen(errorMsg = null) {
     const app = document.getElementById('app');
     app.innerHTML = `
-      <div class="auth-container">
-        <svg class="brand-icon" style="width:48px;height:48px;margin-bottom:1rem;" viewBox="0 0 64 64">
-          <path d="M32 10 L50 18 L50 36 C50 46 42 53 32 56 C22 53 14 46 14 36 L14 18 Z" fill="none" stroke="#10b981" stroke-width="4"/>
-          <circle cx="32" cy="30" r="5" fill="#10b981"/>
-          <path d="M32 35 L32 44" stroke="#10b981" stroke-width="4"/>
-        </svg>
-        <h1 class="auth-title">Relay Security Console</h1>
-        <p class="auth-desc">Local-first, zero-trust security control plane. Enter your CLI-issued session token to unlock the console.</p>
-        ${errorMsg ? `<div class="badge badge-danger" style="display:block;margin-bottom:1rem;padding:0.5rem;">${escapeHtml(errorMsg)}</div>` : ''}
-        <form id="auth-form">
-          <input type="password" id="token-input" class="auth-input" placeholder="Paste session token from 'relay ui'..." required autofocus />
-          <button type="submit" class="btn btn-primary" style="width:100%;">Authenticate Session</button>
-        </form>
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;">
+        <div class="card" style="max-width:440px;width:100%;border-color:var(--border-default);">
+          <div style="display:flex;align-items:center;gap:0.65rem;margin-bottom:1.25rem;">
+            <div style="color:var(--color-allow);display:flex;">${icon('shield', 24)}</div>
+            <div>
+              <div style="font-weight:700;font-size:1.15rem;letter-spacing:-0.02em;">Relay Security Console</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);font-family:var(--font-mono);">ZERO-TRUST GATEWAY & CEDAR PDP</div>
+            </div>
+          </div>
+
+          <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.6;">
+            Local security console access requires single-use session authorization. Launch with <code class="mono" style="color:var(--text-primary)">relay ui</code> or enter your session token.
+          </p>
+
+          ${errorMsg ? `<div class="badge badge-deny" style="padding:0.65rem 0.85rem;border-radius:4px;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem;font-family:var(--font-sans);text-transform:none;">${icon('alert', 16)} ${escapeHtml(errorMsg)}</div>` : ''}
+
+          <form id="auth-form" style="display:flex;flex-direction:column;gap:1rem;">
+            <div>
+              <label for="token-input" style="display:block;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:0.4rem;">
+                Bootstrap Session Token
+              </label>
+              <input id="token-input" type="password" required autocomplete="off" placeholder="Enter session token from CLI..." class="search-input" style="width:100%;" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%;padding:0.6rem;">
+              ${icon('key', 16)} Authenticate & Access Console
+            </button>
+          </form>
+
+          <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border-subtle);font-size:0.78rem;color:var(--text-muted);display:flex;justify-content:space-between;">
+            <span>Loopback Only (127.0.0.1)</span>
+            <span>Zero Telemetry</span>
+          </div>
+        </div>
       </div>
     `;
 
     document.getElementById('auth-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const input = document.getElementById('token-input').value;
-      if (!input) return;
+      const val = document.getElementById('token-input').value.trim();
+      if (!val) return;
+
       try {
         const data = await fetch('/api/v1/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: input.trim() }),
+          body: JSON.stringify({ token: val }),
         }).then(r => {
-          if (!r.ok) throw new Error('Authentication rejected');
+          if (!r.ok) throw new Error('Token verification failed');
           return r.json();
         });
 
@@ -313,351 +363,319 @@
         sessionStorage.setItem('relay_sess', sessionToken);
         sessionStorage.setItem('relay_csrf', csrfToken);
         startApp();
-      } catch (err) {
-        renderAuthScreen(err.message);
+      } catch {
+        renderAuthScreen('Invalid session token. Please run `relay ui` to generate a fresh token.');
       }
     });
   }
 
+  // Main App Shell
   function startApp() {
     renderMainLayout();
     window.addEventListener('hashchange', handleRoute);
-    setupKeyboardShortcuts();
+    window.addEventListener('keydown', handleGlobalKeydown);
     handleRoute();
-  }
-
-  function setupKeyboardShortcuts() {
-    window.addEventListener('keydown', (e) => {
-      const tag = e.target.tagName.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') {
-        if (e.key === 'Escape') e.target.blur();
-        return;
-      }
-
-      const keyNum = parseInt(e.key, 10);
-      if (keyNum >= 1 && keyNum <= VIEWS.length) {
-        e.preventDefault();
-        window.location.hash = '#' + VIEWS[keyNum - 1].id;
-        return;
-      }
-
-      if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        triggerRefresh();
-        return;
-      }
-
-      if (e.key === '/') {
-        const searchInput = document.getElementById('filter-search');
-        if (searchInput) {
-          e.preventDefault();
-          searchInput.focus();
-          searchInput.select();
-        }
-        return;
-      }
-
-      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
-        e.preventDefault();
-        showShortcutsModal();
-        return;
-      }
-
-      if (e.key === 'Escape') {
-        closeModal();
-      }
-    });
   }
 
   function renderMainLayout() {
     const app = document.getElementById('app');
     app.innerHTML = `
       <header class="header">
-        <a href="#overview" class="brand" title="Relay Security Console">
-          <svg class="brand-icon" viewBox="0 0 64 64">
-            <path d="M32 10 L50 18 L50 36 C50 46 42 53 32 56 C22 53 14 46 14 36 L14 18 Z" fill="none" stroke="#10b981" stroke-width="4"/>
-            <circle cx="32" cy="30" r="5" fill="#10b981"/>
-            <path d="M32 35 L32 44" stroke="#10b981" stroke-width="4"/>
-          </svg>
-          <span>RELAY CONSOLE</span>
+        <a href="#overview" class="brand">
+          <span style="color:var(--color-allow);display:flex;">${icon('shield', 22)}</span>
+          <span>Relay</span>
+          <span class="brand-badge">Console</span>
         </a>
 
-        <nav class="nav" id="main-nav" aria-label="Main Navigation">
-          ${VIEWS.map(v => `<button class="nav-link" data-view="${v.id}" title="${v.name} (Key: ${v.shortcut})">${v.name} <kbd>${v.shortcut}</kbd></button>`).join('')}
+        <nav class="nav" role="tablist">
+          ${VIEWS.map(v => `
+            <a href="#${v.id}" id="nav-${v.id}" class="nav-link ${v.id === currentView ? 'active' : ''}" role="tab" aria-selected="${v.id === currentView}">
+              ${v.name}
+              <kbd>${v.shortcut}</kbd>
+            </a>
+          `).join('')}
         </nav>
 
-        <div class="toolbar-group">
-          <div class="status-pill protected" id="global-status-pill" title="Gateway Active — Zero Ambient Credentials Enforced">
+        <div class="header-meta">
+          <div class="status-indicator protected">
             <span class="status-dot pulse-dot"></span>
-            <span id="global-status-text">PROTECTED</span>
+            <span>Protected</span>
           </div>
 
-          <select id="auto-refresh-select" class="select-filter" style="padding:0.25rem 0.5rem;font-size:0.75rem;" title="Auto-Refresh Interval">
-            <option value="0">Auto: Off</option>
-            <option value="5000">Auto: 5s</option>
-            <option value="10000">Auto: 10s</option>
-            <option value="30000">Auto: 30s</option>
-          </select>
-
-          <button class="btn btn-secondary btn-sm" id="btn-refresh-now" title="Refresh Current View (R)">↻</button>
-          <button class="btn btn-secondary btn-sm" id="btn-shortcuts-help" title="Keyboard Shortcuts (?)">?</button>
-          <button class="btn btn-secondary btn-sm" id="btn-lock" title="Lock Console Session">Lock</button>
+          <div style="display:flex;align-items:center;gap:0.35rem;">
+            <button id="refresh-btn" class="btn btn-secondary btn-sm" title="Refresh (Shortcut: R)" aria-label="Refresh view data">
+              ${icon('refresh', 14)}
+            </button>
+            <button id="shortcuts-btn" class="btn btn-secondary btn-sm" title="Shortcuts (Shortcut: ?)" aria-label="Keyboard shortcuts">
+              <kbd>?</kbd>
+            </button>
+          </div>
         </div>
       </header>
-      <main class="container" id="view-container" tabindex="-1"></main>
+
+      <main class="container" id="view-container" role="main"></main>
+
       <footer class="footer">
-        Relay v0.1.0 • Local-first Zero-Trust Security Gateway • Zero Cloud Telemetry • 127.0.0.1 Loopback
+        <div>Relay Security Gateway v0.1.0 • Fail-Closed Cedar Authorization</div>
+        <div style="display:flex;gap:1.25rem;">
+          <a href="#doctor">System Health</a>
+          <a href="#security">Invariants</a>
+          <a href="https://github.com/Sumeet-basfore/relay" target="_blank" rel="noopener">GitHub</a>
+        </div>
       </footer>
     `;
 
-    document.querySelectorAll('#main-nav .nav-link').forEach(btn => {
-      btn.addEventListener('click', () => {
-        window.location.hash = '#' + btn.getAttribute('data-view');
-      });
-    });
-
-    document.getElementById('auto-refresh-select').addEventListener('change', (e) => {
-      const ms = parseInt(e.target.value, 10);
-      setAutoRefresh(ms);
-    });
-
-    document.getElementById('btn-refresh-now').addEventListener('click', () => {
-      triggerRefresh();
-    });
-
-    document.getElementById('btn-shortcuts-help').addEventListener('click', showShortcutsModal);
-
-    document.getElementById('btn-lock').addEventListener('click', () => {
-      sessionToken = null;
-      csrfToken = null;
-      sessionStorage.clear();
-      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-      renderAuthScreen('Session locked.');
-    });
+    document.getElementById('refresh-btn').addEventListener('click', () => refreshCurrentView(true));
+    document.getElementById('shortcuts-btn').addEventListener('click', showShortcutsModal);
   }
 
-  function setAutoRefresh(ms) {
-    autoRefreshInterval = ms;
-    if (autoRefreshTimer) {
-      clearInterval(autoRefreshTimer);
-      autoRefreshTimer = null;
+  // Routing Dispatch
+  function handleRoute() {
+    const hash = window.location.hash.replace('#', '').trim();
+    if (hash.startsWith('activity/')) {
+      const actionId = hash.replace('activity/', '');
+      inspectAction(actionId);
+      return;
     }
-    if (ms > 0) {
-      autoRefreshTimer = setInterval(() => {
-        if (!isRefreshing && document.visibilityState !== 'hidden') {
-          triggerRefresh(true);
+
+    const matched = VIEWS.find(v => v.id === hash);
+    currentView = matched ? matched.id : 'overview';
+
+    VIEWS.forEach(v => {
+      const el = document.getElementById(`nav-${v.id}`);
+      if (el) {
+        if (v.id === currentView) {
+          el.classList.add('active');
+          el.setAttribute('aria-selected', 'true');
+        } else {
+          el.classList.remove('active');
+          el.setAttribute('aria-selected', 'false');
         }
-      }, ms);
-      showToast(`Auto-refresh enabled (${ms / 1000}s)`, 'info', 2000);
-    } else {
-      showToast('Auto-refresh disabled', 'info', 2000);
-    }
-  }
-
-  async function triggerRefresh(isAuto = false) {
-    if (isRefreshing) return;
-    isRefreshing = true;
-    const icon = document.getElementById('btn-refresh-now');
-    if (icon) icon.style.opacity = '0.5';
-    try {
-      await handleRoute(false);
-      if (!isAuto) showToast('View refreshed', 'info', 1500);
-    } finally {
-      isRefreshing = false;
-      if (icon) icon.style.opacity = '1';
-    }
-  }
-
-  function handleRoute(showLoading = true) {
-    let hash = window.location.hash.substring(1);
-    let view = hash.split('?')[0] || 'overview';
-    currentView = view;
-
-    document.querySelectorAll('#main-nav .nav-link').forEach(link => {
-      if (link.getAttribute('data-view') === view) {
-        link.classList.add('active');
-        link.setAttribute('aria-current', 'page');
-      } else {
-        link.classList.remove('active');
-        link.removeAttribute('aria-current');
       }
     });
 
-    const container = document.getElementById('view-container');
-    if (showLoading) {
-      container.innerHTML = `<div style="text-align:center;padding:4rem;color:var(--text-secondary);">Loading ${escapeHtml(view)}...</div>`;
-    }
-
-    if (view === 'overview') renderOverview();
-    else if (view === 'activity') renderActivity();
-    else if (view === 'action-detail') renderActionDetail();
-    else if (view === 'receipts') renderReceipts();
-    else if (view === 'ledger') renderLedger();
-    else if (view === 'policies') renderPolicies();
-    else if (view === 'security') renderSecurity();
-    else if (view === 'egress') renderEgress();
-    else if (view === 'connectors') renderConnectors();
-    else if (view === 'doctor') renderDoctor();
-    else renderOverview();
+    renderCurrentView();
   }
 
-  // VIEW: Overview
+  function handleGlobalKeydown(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+      if (e.key === 'Escape') {
+        e.target.blur();
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      closeModal();
+      return;
+    }
+
+    if (e.key === '?') {
+      e.preventDefault();
+      showShortcutsModal();
+      return;
+    }
+
+    if (e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      refreshCurrentView(true);
+      return;
+    }
+
+    if (e.key === '/') {
+      const searchBox = document.querySelector('.search-input');
+      if (searchBox) {
+        e.preventDefault();
+        searchBox.focus();
+        return;
+      }
+    }
+
+    const matchedView = VIEWS.find(v => v.shortcut === e.key);
+    if (matchedView) {
+      e.preventDefault();
+      window.location.hash = matchedView.id;
+    }
+  }
+
+  async function refreshCurrentView(showFeedback = false) {
+    if (isRefreshing) return;
+    isRefreshing = true;
+    try {
+      await renderCurrentView();
+      if (showFeedback) showToast('View data updated', 'success', 1500);
+    } catch (err) {
+      showToast(`Refresh error: ${err.message}`, 'error');
+    } finally {
+      isRefreshing = false;
+    }
+  }
+
+  function renderCurrentView() {
+    switch (currentView) {
+      case 'overview': return renderOverview();
+      case 'activity': return renderActivity();
+      case 'receipts': return renderReceipts();
+      case 'ledger': return renderLedger();
+      case 'policies': return renderPolicies();
+      case 'secrets': return renderSecrets();
+      case 'security': return renderSecurity();
+      case 'egress': return renderEgress();
+      case 'connectors': return renderConnectors();
+      case 'doctor': return renderDoctor();
+      default: return renderOverview();
+    }
+  }
+
+  // ===========================================================================
+  // VIEW: Overview (Mission Control)
+  // ===========================================================================
   async function renderOverview() {
     const container = document.getElementById('view-container');
     try {
       const [status, activityData] = await Promise.all([
         api('/api/v1/status'),
-        api('/api/v1/activity?limit=5')
+        api('/api/v1/activity?limit=6')
       ]);
 
-      const recentItems = activityData.items || [];
-      activityCache = recentItems;
+      const items = activityData.items || [];
+      activityCache = items;
 
       container.innerHTML = `
         <div class="view-header">
           <div>
-            <h1 class="section-title">Security Overview</h1>
-            <p class="section-subtitle">Real-time posture and operational health of the Relay zero-trust gateway.</p>
+            <h1 class="section-title">${icon('shield', 22)} Gateway Posture Overview</h1>
+            <p class="section-subtitle">Real-time Cedar PDP enforcement, DSSE receipt signing, and ledger integrity status.</p>
           </div>
           <div class="toolbar-group">
-            <a href="#doctor" class="btn btn-secondary btn-sm">Run Diagnostics</a>
-            <a href="#ledger" class="btn btn-secondary btn-sm">Verify Ledger</a>
+            <a href="#ledger" class="btn btn-secondary btn-sm">${icon('database', 14)} Verify Ledger</a>
+            <a href="#doctor" class="btn btn-secondary btn-sm">${icon('terminal', 14)} Diagnostics</a>
           </div>
         </div>
 
         <div class="grid-4">
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Security Posture</span>
-              <span class="badge badge-success">PROTECTED</span>
+              <span class="card-title">Security State</span>
+              <span class="badge badge-allow">${icon('check', 12)} ENFORCED</span>
             </div>
-            <div class="card-value" style="color:var(--color-success)">ACTIVE</div>
+            <div class="card-value" style="color:var(--color-allow)">ACTIVE</div>
             <div class="card-subtext">Zero Ambient Credentials</div>
           </div>
 
           <div class="card">
             <div class="card-header">
               <span class="card-title">Policy Engine</span>
-              <span class="badge badge-info">CEDAR</span>
+              <span class="badge badge-brand">${icon('layers', 12)} CEDAR PDP</span>
             </div>
             <div class="card-value">Default Deny</div>
-            <div class="card-subtext">${status.policy_count || 1} Active Policies Loaded</div>
+            <div class="card-subtext">${status.policy_count || 1} Strict Cedar Rules Loaded</div>
           </div>
 
           <div class="card">
             <div class="card-header">
               <span class="card-title">Ledger Integrity</span>
-              <span class="badge badge-success">VERIFIED</span>
+              <span class="badge badge-allow">${icon('check', 12)} HASH CHAIN</span>
             </div>
             <div class="card-value">#${status.ledger_head_seq || 0}</div>
-            <div class="card-subtext">${status.ledger_total_entries || 0} Hash-Chained Entries</div>
+            <div class="card-subtext">${status.ledger_total_entries || 0} Immutable DSSE Entries</div>
           </div>
 
           <div class="card">
             <div class="card-header">
               <span class="card-title">Egress Sandbox</span>
-              <span class="badge badge-warning">${escapeHtml(status.sandbox_short_mode || 'ACTIVE')}</span>
+              <span class="badge badge-approval">${escapeHtml(status.sandbox_short_mode || 'ENFORCED')}</span>
             </div>
             <div class="card-value">${status.active_connectors || 4} Connectors</div>
-            <div class="card-subtext">${escapeHtml(status.egress_sandbox_mode || 'Enforced')}</div>
+            <div class="card-subtext">${escapeHtml(status.egress_sandbox_mode || 'Mediated Egress')}</div>
           </div>
         </div>
 
         <div class="card" style="margin-bottom:1.5rem;">
           <div class="card-header">
-            <span class="card-title">System Configuration</span>
-            <span class="badge badge-neutral">${escapeHtml(status.target_os || 'linux')} / ${escapeHtml(status.target_arch || 'x86_64')}</span>
+            <span class="card-title">System & Host Configuration</span>
+            <span class="badge badge-neutral mono">${escapeHtml(status.target_os || 'linux')} / ${escapeHtml(status.target_arch || 'x86_64')}</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:1.25rem;font-size:0.875rem;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;font-size:0.85rem;">
             <div>
               <span style="color:var(--text-secondary)">Relay Version:</span><br/>
-              <span class="mono" style="font-weight:600;">${escapeHtml(status.relay_version)}</span>
+              <span class="mono" style="font-weight:600;color:var(--text-primary);">${escapeHtml(status.relay_version)}</span>
             </div>
             <div>
               <span style="color:var(--text-secondary)">Signing Key ID (Ed25519):</span><br/>
               <span class="mono">${escapeHtml(status.signing_key_id || 'relay-ed25519-v1')}</span>
             </div>
             <div>
-              <span style="color:var(--text-secondary)">Ledger Database:</span><br/>
+              <span style="color:var(--text-secondary)">Ledger Store:</span><br/>
               <span class="mono">${escapeHtml(status.ledger_path || '.relay/ledger.db')}</span>
-            </div>
-            <div>
-              <span style="color:var(--text-secondary)">Console Endpoint:</span><br/>
-              <span class="mono" style="color:var(--color-brand)">127.0.0.1:${window.location.port || '8080'}</span>
             </div>
           </div>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-          <h2 style="font-size:1.15rem;font-weight:600;">Recent Governed Actions</h2>
-          <a href="#activity" class="btn btn-secondary btn-sm">View All →</a>
+        <div class="view-header" style="margin-bottom:0.75rem;">
+          <div>
+            <h2 style="font-size:1.15rem;font-weight:700;">Recent Governed Actions</h2>
+            <p class="section-subtitle">Real-time audit stream of tool execution decisions and signed receipts.</p>
+          </div>
+          <a href="#activity" class="btn btn-secondary btn-sm">View All Activity &rarr;</a>
         </div>
 
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Time (UTC)</th>
-                <th>Status</th>
-                <th>Tool</th>
-                <th>Principal</th>
-                <th>ActionHash</th>
+                <th>Seq</th>
+                <th>Time</th>
+                <th>Tool Name</th>
+                <th>Resource / Target</th>
                 <th>Decision</th>
-                <th>Action</th>
+                <th>Action Hash</th>
+                <th>Inspect</th>
               </tr>
             </thead>
-            <tbody id="overview-activity-table">
-              ${recentItems.length === 0 ? `
-                <tr><td colspan="7" style="padding:3rem 1rem;">
-                  <div class="empty-state-card" style="margin:0;border:none;">
-                    <div class="empty-state-icon">🛡️</div>
-                    <div class="empty-state-title">No Governed Actions Yet</div>
-                    <div class="empty-state-desc">When agent tools are executed through Relay, the full audit trail appears here in real-time.</div>
-                    <div class="code-snippet"><span>$ relay run -- &lt;your-command&gt;</span></div>
-                  </div>
-                </td></tr>
-              ` : ''}
+            <tbody>
+              ${items.length === 0 ? `
+                <tr>
+                  <td colspan="7" style="text-align:center;color:var(--text-muted);padding:2.5rem;">
+                    No governed actions recorded yet.<br/>
+                    <span style="font-size:0.78rem;">Run an MCP tool via <code class="mono">relay run -- &lt;server-command&gt;</code> to view live decisions.</span>
+                  </td>
+                </tr>
+              ` : items.map(it => `
+                <tr>
+                  <td class="mono">#${it.sequence_number}</td>
+                  <td>${formatTs(it.timestamp)}</td>
+                  <td><span class="mono" style="font-weight:600;">${escapeHtml(it.tool_name)}</span></td>
+                  <td><span class="mono" style="color:var(--text-secondary);">${escapeHtml(it.resource)}</span></td>
+                  <td>
+                    <span class="badge ${it.decision === 'ALLOW' ? 'badge-allow' : 'badge-deny'}">
+                      ${it.decision === 'ALLOW' ? icon('check', 11) : icon('x', 11)} ${escapeHtml(it.decision)}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="hash-chip" onclick="window.relayCopy('${it.action_hash}', 'Action Hash')" title="Click to copy hash">
+                      ${truncHash(it.action_hash, 12)} ${icon('copy', 11)}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-secondary btn-sm" onclick="window.relayInspect('${it.action_id}')">
+                      Inspect
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>
       `;
-
-      if (recentItems.length > 0) {
-        const tbody = document.getElementById('overview-activity-table');
-        recentItems.forEach(item => {
-          const tr = document.createElement('tr');
-          const badgeClass = item.status === 'ALLOWED' || item.status === 'EXECUTED' ? 'badge-success' :
-                             item.status === 'DENIED' ? 'badge-danger' :
-                             item.status === 'APPROVAL_REQUIRED' ? 'badge-warning' : 'badge-neutral';
-          tr.innerHTML = `
-            <td class="mono">${formatTs(item.timestamp)}</td>
-            <td><span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td>
-            <td><strong>${escapeHtml(item.tool_name)}</strong></td>
-            <td class="mono">${escapeHtml(item.principal || 'agent')}</td>
-            <td class="mono">
-              <span title="${escapeHtml(item.action_hash)}">${escapeHtml(truncHash(item.action_hash))}</span>
-              <button class="btn-copy" data-copy="${escapeHtml(item.action_hash)}" title="Copy ActionHash">⎘</button>
-            </td>
-            <td><span class="badge ${item.decision === 'ALLOW' ? 'badge-success' : 'badge-danger'}">${escapeHtml(item.decision || 'DENY')}</span></td>
-            <td><a href="#action-detail?id=${encodeURIComponent(item.receipt_id || item.action_id)}" class="btn btn-secondary btn-sm">Inspect</a></td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        tbody.querySelectorAll('.btn-copy').forEach(btn => {
-          btn.addEventListener('click', () => {
-            copyToClipboard(btn.getAttribute('data-copy'), 'ActionHash');
-          });
-        });
-      }
-
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading overview: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading overview: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-
-  // VIEW: Activity
+  // ===========================================================================
+  // VIEW: Activity Stream (With Live Search & Decision Filter)
+  // ===========================================================================
   async function renderActivity() {
     const container = document.getElementById('view-container');
     try {
@@ -668,767 +686,553 @@
       container.innerHTML = `
         <div class="view-header">
           <div>
-            <h1 class="section-title">Governed Actions Activity</h1>
-            <p class="section-subtitle">Full audit log of agent tool proposals evaluated by Cedar and governed by Relay.</p>
+            <h1 class="section-title">${icon('terminal', 22)} Governed Activity Stream</h1>
+            <p class="section-subtitle">Complete chronological stream of intercepted tool calls, policy evaluations, and signed receipts.</p>
           </div>
-          <div id="activity-counter" class="badge badge-neutral" style="font-size:0.8rem;padding:0.4rem 0.75rem;align-self:flex-start;">
-            ${items.length} Actions Total
+          <div class="toolbar-group">
+            <span id="activity-counter" class="badge badge-neutral mono">Total: ${items.length}</span>
           </div>
         </div>
 
         <div class="filter-bar">
-          <input type="text" id="filter-search" class="input-search" placeholder="Search tool, resource, ActionHash, principal... (Press /)" />
-          <select id="filter-decision" class="select-filter" title="Filter by Cedar Decision">
-            <option value="">All Decisions</option>
-            <option value="ALLOW">Allow</option>
-            <option value="DENY">Deny</option>
+          <input type="text" id="activity-search" class="search-input" placeholder="Search tool, resource, action hash... (Shortcut: /)" />
+          <select id="activity-decision-filter" class="filter-select">
+            <option value="ALL">All Decisions</option>
+            <option value="ALLOW">ALLOW Only (Permitted)</option>
+            <option value="DENY">DENY Only (Blocked)</option>
           </select>
-          <select id="filter-status" class="select-filter" title="Filter by Execution Status">
-            <option value="">All Statuses</option>
-            <option value="ALLOWED">Allowed</option>
-            <option value="EXECUTED">Executed</option>
-            <option value="DENIED">Denied</option>
-            <option value="APPROVAL_REQUIRED">Approval Required</option>
-            <option value="FAILED">Failed</option>
-          </select>
-          <select id="filter-sort" class="select-filter" title="Sort Order">
-            <option value="desc">Newest First</option>
-            <option value="asc">Oldest First</option>
-          </select>
-          <button class="btn btn-secondary btn-sm" id="btn-clear-filters">Reset</button>
         </div>
 
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Time (UTC)</th>
-                <th>Status</th>
-                <th>Tool</th>
-                <th>Resource</th>
-                <th>ActionHash</th>
+                <th>Seq</th>
+                <th>Timestamp (UTC)</th>
+                <th>Tool Name</th>
+                <th>Resource Target</th>
                 <th>Decision</th>
-                <th>Approval</th>
+                <th>Action Hash</th>
+                <th>Receipt ID</th>
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody id="activity-table-body">
-              ${items.length === 0 ? `
-                <tr><td colspan="8" style="padding:3rem 1rem;">
-                  <div class="empty-state-card" style="margin:0;border:none;">
-                    <div class="empty-state-icon">📋</div>
-                    <div class="empty-state-title">No Governed Activity Found</div>
-                    <div class="empty-state-desc">Every operation executed via Relay generates an immutable audit record here.</div>
-                    <div class="code-snippet"><span>$ relay mcp run github-mcp</span></div>
-                  </div>
-                </td></tr>
-              ` : ''}
-            </tbody>
+            <tbody id="activity-tbody"></tbody>
           </table>
         </div>
       `;
 
-      const tbody = document.getElementById('activity-table-body');
-      const counterEl = document.getElementById('activity-counter');
+      function filterAndRender() {
+        const q = (document.getElementById('activity-search').value || '').toLowerCase();
+        const dec = document.getElementById('activity-decision-filter').value;
 
-      function updateTable() {
-        const searchText = document.getElementById('filter-search').value.toLowerCase().trim();
-        const statusFilter = document.getElementById('filter-status').value;
-        const decisionFilter = document.getElementById('filter-decision').value;
-        const sortOrder = document.getElementById('filter-sort').value;
-
-        let filtered = items.filter(item => {
-          const matchesText = !searchText ||
-            (item.tool_name && item.tool_name.toLowerCase().includes(searchText)) ||
-            (item.action_hash && item.action_hash.toLowerCase().includes(searchText)) ||
-            (item.receipt_id && item.receipt_id.toLowerCase().includes(searchText)) ||
-            (item.resource && item.resource.toLowerCase().includes(searchText)) ||
-            (item.principal && item.principal.toLowerCase().includes(searchText));
-          const matchesStatus = !statusFilter || item.status === statusFilter;
-          const matchesDecision = !decisionFilter || item.decision === decisionFilter;
-          return matchesText && matchesStatus && matchesDecision;
+        const filtered = items.filter(it => {
+          if (dec !== 'ALL' && it.decision !== dec) return false;
+          if (!q) return true;
+          return (
+            (it.tool_name || '').toLowerCase().includes(q) ||
+            (it.resource || '').toLowerCase().includes(q) ||
+            (it.action_hash || '').toLowerCase().includes(q) ||
+            (it.receipt_id || '').toLowerCase().includes(q)
+          );
         });
 
-        if (sortOrder === 'asc') {
-          filtered.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        } else {
-          filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        }
+        document.getElementById('activity-counter').textContent = `Showing: ${filtered.length} of ${items.length}`;
 
-        if (counterEl) counterEl.textContent = `${filtered.length} of ${items.length} Actions`;
-
-        tbody.innerHTML = '';
+        const tbody = document.getElementById('activity-tbody');
         if (filtered.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2.5rem;">No actions match the active filters.</td></tr>';
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem;">No matching activity events found.</td></tr>`;
           return;
         }
 
-        filtered.forEach(item => {
-          const tr = document.createElement('tr');
-          const badgeClass = item.status === 'ALLOWED' || item.status === 'EXECUTED' ? 'badge-success' :
-                             item.status === 'DENIED' ? 'badge-danger' :
-                             item.status === 'APPROVAL_REQUIRED' ? 'badge-warning' : 'badge-neutral';
-          tr.innerHTML = `
-            <td class="mono">${formatTs(item.timestamp)}</td>
-            <td><span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td>
-            <td><strong>${escapeHtml(item.tool_name)}</strong></td>
-            <td class="mono" title="${escapeHtml(item.resource)}">${escapeHtml(truncHash(item.resource, 26))}</td>
-            <td class="mono">
-              <span title="${escapeHtml(item.action_hash)}">${escapeHtml(truncHash(item.action_hash, 14))}</span>
-              <button class="btn-copy" data-copy="${escapeHtml(item.action_hash)}" title="Copy ActionHash">⎘</button>
+        tbody.innerHTML = filtered.map(it => `
+          <tr>
+            <td class="mono">#${it.sequence_number}</td>
+            <td>${formatTs(it.timestamp)}</td>
+            <td><span class="mono" style="font-weight:600;">${escapeHtml(it.tool_name)}</span></td>
+            <td><span class="mono" style="color:var(--text-secondary);">${escapeHtml(it.resource)}</span></td>
+            <td>
+              <span class="badge ${it.decision === 'ALLOW' ? 'badge-allow' : 'badge-deny'}">
+                ${it.decision === 'ALLOW' ? icon('check', 11) : icon('x', 11)} ${escapeHtml(it.decision)}
+              </span>
             </td>
-            <td><span class="badge ${item.decision === 'ALLOW' ? 'badge-success' : 'badge-danger'}">${escapeHtml(item.decision || 'DENY')}</span></td>
-            <td><span class="badge badge-neutral">${escapeHtml(item.approval_state || 'NOT_REQUIRED')}</span></td>
-            <td><a href="#action-detail?id=${encodeURIComponent(item.receipt_id || item.action_id)}" class="btn btn-secondary btn-sm">Inspect</a></td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        tbody.querySelectorAll('.btn-copy').forEach(btn => {
-          btn.addEventListener('click', () => {
-            copyToClipboard(btn.getAttribute('data-copy'), 'ActionHash');
-          });
-        });
+            <td>
+              <span class="hash-chip" onclick="window.relayCopy('${it.action_hash}', 'Action Hash')" title="Copy Action Hash">
+                ${truncHash(it.action_hash, 12)} ${icon('copy', 11)}
+              </span>
+            </td>
+            <td>
+              <span class="hash-chip" onclick="window.relayCopy('${it.receipt_id}', 'Receipt ID')" title="Copy Receipt ID">
+                ${truncHash(it.receipt_id, 10)} ${icon('copy', 11)}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-secondary btn-sm" onclick="window.relayInspect('${it.action_id}')">
+                Inspect
+              </button>
+            </td>
+          </tr>
+        `).join('');
       }
 
-      updateTable();
-
-      document.getElementById('filter-search').addEventListener('input', updateTable);
-      document.getElementById('filter-status').addEventListener('change', updateTable);
-      document.getElementById('filter-decision').addEventListener('change', updateTable);
-      document.getElementById('filter-sort').addEventListener('change', updateTable);
-      document.getElementById('btn-clear-filters').addEventListener('click', () => {
-        document.getElementById('filter-search').value = '';
-        document.getElementById('filter-status').value = '';
-        document.getElementById('filter-decision').value = '';
-        document.getElementById('filter-sort').value = 'desc';
-        updateTable();
-      });
+      document.getElementById('activity-search').addEventListener('input', filterAndRender);
+      document.getElementById('activity-decision-filter').addEventListener('change', filterAndRender);
+      filterAndRender();
 
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading activity: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading activity: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // VIEW: Action Detail (7 Stages Lifecycle)
-  async function renderActionDetail() {
-    const container = document.getElementById('view-container');
-    const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    const id = urlParams.get('id');
-
-    if (!id) {
-      container.innerHTML = `
-        <div class="badge badge-warning" style="padding:1rem;display:block;margin-bottom:1rem;">No Action or Receipt ID specified.</div>
-        <a href="#activity" class="btn btn-secondary">Back to Activity</a>
-      `;
-      return;
-    }
-
-    try {
-      const detail = await api(`/api/v1/activity/${encodeURIComponent(id)}`);
-      const r = detail.receipt || {};
-      const pred = detail.predicate || {};
-      const prop = pred.canonical_proposal || {};
-      const pol = pred.policy_decision || {};
-      const app = pred.operator_approval || {};
-      const cred = pred.credential_lease || {};
-      const exec = pred.execution_observation || {};
-
-      container.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <div>
-            <h1 class="section-title">Action Lifecycle Detail</h1>
-            <p class="section-subtitle">Seven-stage governed execution pipeline and cryptographic evidence.</p>
-          </div>
-          <a href="#activity" class="btn btn-secondary btn-sm">← Back to Activity</a>
-        </div>
-
-        <div class="lifecycle-flow">
-          <!-- Stage 1: Proposal -->
-          <div class="lifecycle-step">
-            <div class="step-num">1</div>
-            <div class="step-content">
-              <div class="step-title">
-                <span>Tool Action Proposal</span>
-                <span class="badge badge-info">${escapeHtml(prop.tool_name || detail.tool_name || 'unknown')}</span>
-              </div>
-              <div class="step-meta" style="margin-bottom:0.75rem;">
-                Action ID: <span class="mono">${escapeHtml(detail.action_id || id)}</span> • 
-                Principal: <span class="mono">${escapeHtml(prop.principal || 'agent')}</span> • 
-                Resource: <span class="mono">${escapeHtml(prop.resource || detail.resource || '-')}</span>
-              </div>
-              <div class="step-meta">
-                ActionHash (RFC 8785 JCS): <span class="mono">${escapeHtml(detail.action_hash || r.action_hash || '-')}</span>
-              </div>
-              <details style="margin-top:0.5rem;">
-                <summary style="cursor:pointer;color:var(--color-info);font-size:0.85rem;">View Canonical Proposal (Redacted Arguments)</summary>
-                <pre style="margin-top:0.5rem;">${escapeHtml(JSON.stringify(prop.arguments || {}, null, 2))}</pre>
-              </details>
-            </div>
-          </div>
-
-          <!-- Stage 2: Policy -->
-          <div class="lifecycle-step">
-            <div class="step-num">2</div>
-            <div class="step-content">
-              <div class="step-title">
-                <span>Cedar Policy Decision</span>
-                <span class="badge ${pol.decision === 'ALLOW' ? 'badge-success' : 'badge-danger'}">${escapeHtml(pol.decision || detail.decision || 'DENY')}</span>
-              </div>
-              <div class="step-meta">
-                Policy Digest: <span class="mono">${escapeHtml(pol.policy_digest || '-')}</span><br/>
-                Determining Policies: <span class="mono">${escapeHtml(JSON.stringify(pol.determining_policies || ['default-deny']))}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stage 3: Approval -->
-          <div class="lifecycle-step">
-            <div class="step-num">3</div>
-            <div class="step-content">
-              <div class="step-title">
-                <span>Interactive Operator Approval</span>
-                <span class="badge badge-neutral">${escapeHtml(app.decision || 'NOT_REQUIRED')}</span>
-              </div>
-              <div class="step-meta">
-                Mechanism: <span class="mono">${escapeHtml(app.mechanism || 'Out-of-band /dev/tty Gate')}</span> • 
-                Approver: <span class="mono">${escapeHtml(app.approver || 'Relay Engine')}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stage 4: Credential Lease -->
-          <div class="lifecycle-step">
-            <div class="step-num">4</div>
-            <div class="step-content">
-              <div class="step-title">
-                <span>Just-In-Time Credential Lease</span>
-                <span class="badge badge-success">ZERO AMBIENT</span>
-              </div>
-              <div class="step-meta">
-                Lease ID: <span class="mono">${escapeHtml(cred.lease_id || 'None (Native Public Access)')}</span> • 
-                Provider: <span class="mono">${escapeHtml(cred.provider || 'Zeroized In-Memory Broker')}</span><br/>
-                Secret Material: <strong style="color:var(--color-success)">[COMPLETELY REDACTED / NEVER OBSERVED BY AGENT]</strong>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stage 5: Execution -->
-          <div class="lifecycle-step">
-            <div class="step-num">5</div>
-            <div class="step-content">
-              <div class="step-title">
-                <span>Native Tool Execution</span>
-                <span class="badge badge-info">${escapeHtml(exec.status || 'SUCCESS')}</span>
-              </div>
-              <div class="step-meta">
-                Exit Code: <span class="mono">${escapeHtml(exec.exit_code !== undefined ? exec.exit_code : 0)}</span> • 
-                Output Bytes: <span class="mono">${escapeHtml(exec.output_byte_count || 0)}</span> • 
-                Stdout Digest: <span class="mono">${escapeHtml(truncHash(exec.stdout_digest))}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stage 6: Receipt -->
-          <div class="lifecycle-step">
-            <div class="step-num">6</div>
-            <div class="step-content">
-              <div class="step-title">
-                <span>Action Receipt (DSSE & in-toto v1.0)</span>
-                <span class="badge badge-success">ED25519 SIGNED</span>
-              </div>
-              <div class="step-meta">
-                Receipt ID: <span class="mono">${escapeHtml(r.receipt_id || detail.receipt_id || '-')}</span> • 
-                Key ID: <span class="mono">${escapeHtml(detail.key_id || 'relay-ed25519-v1')}</span>
-              </div>
-              <div style="margin-top:0.75rem;">
-                <button class="btn btn-primary btn-sm" id="btn-verify-receipt-detail">Cryptographically Verify Receipt</button>
-                <div id="receipt-verify-result" style="margin-top:0.5rem;"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stage 7: Ledger -->
-          <div class="lifecycle-step">
-            <div class="step-num">7</div>
-            <div class="step-content">
-              <div class="step-title">
-                <span>Append-Only Ledger Entry</span>
-                <span class="badge badge-success">CHAINED</span>
-              </div>
-              <div class="step-meta">
-                Sequence: <span class="mono">#${escapeHtml(detail.sequence_number || '1')}</span> • 
-                Current Hash: <span class="mono">${escapeHtml(truncHash(r.receipt_hash || detail.receipt_hash))}</span> • 
-                Parent Hash: <span class="mono">${escapeHtml(truncHash(r.parent_receipt_hash || detail.parent_receipt_hash))}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('btn-verify-receipt-detail').addEventListener('click', async () => {
-        const resDiv = document.getElementById('receipt-verify-result');
-        resDiv.innerHTML = '<span style="color:var(--text-secondary)">Verifying Ed25519 digital signature...</span>';
-        try {
-          const recId = r.receipt_id || detail.receipt_id || id;
-          const verifyData = await api(`/api/v1/receipts/${encodeURIComponent(recId)}/verify`, { method: 'POST' });
-          if (verifyData.is_valid) {
-            resDiv.innerHTML = `<div class="badge badge-success" style="padding:0.5rem;font-size:0.85rem;display:inline-block;">✓ VALID SIGNATURE (Ed25519 Verified, In-toto Statement Match)</div>`;
-          } else {
-            resDiv.innerHTML = `<div class="badge badge-danger" style="padding:0.5rem;font-size:0.85rem;display:inline-block;">✗ INVALID RECEIPT (${escapeHtml(verifyData.reason || 'Signature mismatch')})</div>`;
-          }
-        } catch (e) {
-          resDiv.innerHTML = `<div class="badge badge-danger" style="padding:0.5rem;font-size:0.85rem;display:inline-block;">Verification Error: ${escapeHtml(e.message)}</div>`;
-        }
-      });
-
-    } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading action detail: ${escapeHtml(err.message)}</div>`;
-    }
-  }
-
-  // VIEW: Receipts & Cryptographic Verifier
+  // ===========================================================================
+  // VIEW: Receipts (RFC 9598 DSSE In-Toto Attestations)
+  // ===========================================================================
   async function renderReceipts() {
     const container = document.getElementById('view-container');
     try {
-      const data = await api('/api/v1/receipts?limit=100');
+      const data = await api('/api/v1/receipts?limit=50');
       const receipts = data.receipts || [];
 
       container.innerHTML = `
         <div class="view-header">
           <div>
-            <h1 class="section-title">Action Receipts &amp; Cryptographic Verifier</h1>
-            <p class="section-subtitle">RFC 9598 DSSE envelopes containing in-toto v1.0 statements signed with Ed25519.</p>
+            <h1 class="section-title">${icon('file', 22)} Cryptographic Action Receipts</h1>
+            <p class="section-subtitle">Signed in-toto attestation statements bound by Ed25519 digital signatures (RFC 9598 DSSE).</p>
           </div>
-          <span class="badge badge-neutral" style="font-size:0.8rem;padding:0.4rem 0.75rem;align-self:flex-start;">${receipts.length} Receipts</span>
-        </div>
-
-        <div id="receipt-verify-banner"></div>
-
-        <div class="filter-bar" style="margin-bottom:1rem;">
-          <input type="text" id="filter-receipt-search" class="input-search" placeholder="Search by receipt ID or ActionHash..." />
+          <div class="toolbar-group">
+            <span class="badge badge-neutral mono">Total: ${receipts.length}</span>
+          </div>
         </div>
 
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Created At (UTC)</th>
                 <th>Receipt ID</th>
-                <th>ActionHash</th>
-                <th>Signatures</th>
-                <th>Verify</th>
-                <th>Export</th>
+                <th>Action ID</th>
+                <th>Created At</th>
+                <th>Signer Key ID</th>
+                <th>Action Hash</th>
+                <th>Verify Receipt</th>
               </tr>
             </thead>
-            <tbody id="receipts-table-body">
+            <tbody>
               ${receipts.length === 0 ? `
-                <tr><td colspan="6" style="padding:3rem 1rem;">
-                  <div class="empty-state-card" style="margin:0;border:none;">
-                    <div class="empty-state-icon">🔏</div>
-                    <div class="empty-state-title">No Receipts Generated</div>
-                    <div class="empty-state-desc">DSSE-signed receipts appear here after Relay governs and executes tool actions. Each receipt is cryptographically verifiable.</div>
-                    <div class="code-snippet"><span>$ relay mcp run &lt;connector&gt;</span></div>
-                  </div>
-                </td></tr>
-              ` : ''}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2.5rem;">No receipts generated yet.</td></tr>
+              ` : receipts.map(r => `
+                <tr>
+                  <td>
+                    <span class="hash-chip" onclick="window.relayCopy('${r.receipt_id}', 'Receipt ID')">
+                      ${truncHash(r.receipt_id, 14)} ${icon('copy', 11)}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="mono" style="color:var(--text-secondary);">${truncHash(r.action_id, 14)}</span>
+                  </td>
+                  <td>${formatTs(r.created_at)}</td>
+                  <td><span class="mono">${escapeHtml(r.signing_key_id)}</span></td>
+                  <td>
+                    <span class="hash-chip" onclick="window.relayCopy('${r.action_hash}', 'Action Hash')">
+                      ${truncHash(r.action_hash, 12)} ${icon('copy', 11)}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-secondary btn-sm" id="verify-btn-${escapeHtml(r.receipt_id)}" onclick="window.relayVerifyReceipt('${r.receipt_id}')">
+                      Verify Signature
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>
       `;
-
-      const tbody = document.getElementById('receipts-table-body');
-
-      function buildRows(list) {
-        tbody.innerHTML = '';
-        if (list.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">No receipts match your search.</td></tr>';
-          return;
-        }
-        list.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="mono">${formatTs(r.created_at)}</td>
-            <td class="mono">
-              <span title="${escapeHtml(r.receipt_id)}">${escapeHtml(truncHash(r.receipt_id, 20))}</span>
-              <button class="btn-copy" data-copy="${escapeHtml(r.receipt_id)}" title="Copy Receipt ID">⎘</button>
-            </td>
-            <td class="mono">
-              <span title="${escapeHtml(r.action_hash)}">${escapeHtml(truncHash(r.action_hash))}</span>
-              <button class="btn-copy" data-copy="${escapeHtml(r.action_hash)}" title="Copy ActionHash">⎘</button>
-            </td>
-            <td><span class="badge badge-info">${r.signature_count || 1} Sig (Ed25519)</span></td>
-            <td><button class="btn btn-primary btn-sm btn-verify" data-id="${escapeHtml(r.receipt_id)}">Verify</button></td>
-            <td><button class="btn btn-secondary btn-sm btn-export" data-id="${escapeHtml(r.receipt_id)}">Export JSON</button></td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        tbody.querySelectorAll('.btn-copy').forEach(btn => {
-          btn.addEventListener('click', () => {
-            copyToClipboard(btn.getAttribute('data-copy'), btn.title);
-          });
-        });
-
-        tbody.querySelectorAll('.btn-verify').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const recId = btn.getAttribute('data-id');
-            btn.textContent = 'Verifying...';
-            btn.disabled = true;
-            try {
-              const res = await api(`/api/v1/receipts/${encodeURIComponent(recId)}/verify`, { method: 'POST' });
-              const banner = document.getElementById('receipt-verify-banner');
-              if (res.is_valid) {
-                showToast('✓ Receipt signature valid — Ed25519 verified', 'success', 4000);
-                banner.innerHTML = `
-                  <div class="verification-banner valid">
-                    <div class="verification-icon">✓</div>
-                    <div>
-                      <strong>VALID SIGNATURE &amp; DOMAIN INTEGRITY</strong><br/>
-                      Receipt <span class="mono">${escapeHtml(recId)}</span> verified cryptographically against Ed25519 public key.
-                    </div>
-                  </div>
-                `;
-              } else {
-                showToast('✗ Receipt signature INVALID — cryptographic divergence', 'error', 5000);
-                banner.innerHTML = `
-                  <div class="verification-banner invalid">
-                    <div class="verification-icon">✗</div>
-                    <div>
-                      <strong>INVALID RECEIPT</strong><br/>
-                      Signature verification failed: ${escapeHtml(res.reason || 'Cryptographic divergence')}
-                    </div>
-                  </div>
-                `;
-              }
-            } catch (e) {
-              showToast('Verification request failed: ' + e.message, 'error', 4000);
-            } finally {
-              btn.textContent = 'Verify';
-              btn.disabled = false;
-            }
-          });
-        });
-
-        tbody.querySelectorAll('.btn-export').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const recId = btn.getAttribute('data-id');
-            btn.textContent = 'Exporting...';
-            btn.disabled = true;
-            try {
-              const exportData = await api(`/api/v1/receipts/${encodeURIComponent(recId)}/export`);
-              const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `relay-receipt-${recId}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
-              showToast('Receipt exported as JSON', 'success', 2500);
-            } catch (e) {
-              showToast('Export failed: ' + e.message, 'error', 4000);
-            } finally {
-              btn.textContent = 'Export JSON';
-              btn.disabled = false;
-            }
-          });
-        });
-      }
-
-      buildRows(receipts);
-
-      document.getElementById('filter-receipt-search').addEventListener('input', (e) => {
-        const q = e.target.value.toLowerCase().trim();
-        if (!q) { buildRows(receipts); return; }
-        buildRows(receipts.filter(r =>
-          (r.receipt_id && r.receipt_id.toLowerCase().includes(q)) ||
-          (r.action_hash && r.action_hash.toLowerCase().includes(q))
-        ));
-      });
-
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading receipts: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading receipts: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // VIEW: Ledger Integrity & Verifier
+  // Helper: Verify single receipt
+  window.relayVerifyReceipt = async function (receiptId) {
+    const btn = document.getElementById(`verify-btn-${receiptId}`);
+    if (btn) btn.textContent = 'Verifying...';
+
+    try {
+      const res = await api(`/api/v1/receipts/${receiptId}/verify`);
+      if (res.is_valid) {
+        showToast(`Receipt ${truncHash(receiptId, 10)} signature VALID (Ed25519 verified)`, 'success');
+        if (btn) {
+          btn.className = 'btn btn-success btn-sm';
+          btn.innerHTML = `${icon('check', 11)} Valid`;
+        }
+      } else {
+        showToast(`Receipt verification FAILED: ${res.reason || 'Invalid signature'}`, 'error');
+        if (btn) {
+          btn.className = 'btn btn-danger btn-sm';
+          btn.innerHTML = `${icon('x', 11)} Invalid`;
+        }
+      }
+    } catch (err) {
+      showToast(`Verification error: ${err.message}`, 'error');
+      if (btn) btn.textContent = 'Verify Signature';
+    }
+  };
+
+  // ===========================================================================
+  // VIEW: Ledger (Cryptographic SHA-256 Audit Chain)
+  // ===========================================================================
   async function renderLedger() {
     const container = document.getElementById('view-container');
     try {
-      const data = await api('/api/v1/ledger/status');
+      const data = await api('/api/v1/ledger?limit=50');
+      const entries = data.entries || [];
 
       container.innerHTML = `
-        <h1 class="section-title">Ledger Integrity & Hash Chain</h1>
-        <p class="section-subtitle">Append-only SQLite cryptographic audit trail protected by SHA-256 hash chaining and filesystem permissions.</p>
-
-        <div id="ledger-verify-banner"></div>
-
-        <div class="grid-3">
-          <div class="card">
-            <div class="card-title">Chain Status</div>
-            <div class="card-value" style="color:var(--color-success)">ACTIVE</div>
-            <div class="card-subtext">Append-Only SQLite (WAL Mode, 0600)</div>
+        <div class="view-header">
+          <div>
+            <h1 class="section-title">${icon('database', 22)} Immutable Audit Ledger</h1>
+            <p class="section-subtitle">Append-only SQLite ledger with continuous SHA-256 hash chaining and strict permissions (0600).</p>
           </div>
-          <div class="card">
-            <div class="card-title">Head Sequence</div>
-            <div class="card-value">#${data.head_sequence || 0}</div>
-            <div class="card-subtext">${data.total_entries || 0} Total Entries Recorded</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Genesis Block</div>
-            <div class="card-value" style="font-size:1.2rem;line-height:2.2rem;" class="mono">${escapeHtml(truncHash(data.genesis_hash, 20))}</div>
-            <div class="card-subtext">Immutable Root of Trust</div>
+          <div class="toolbar-group">
+            <button id="verify-ledger-btn" class="btn btn-primary btn-sm">
+              ${icon('check', 13)} Verify Full Hash Chain
+            </button>
           </div>
         </div>
 
-        <div style="margin-bottom:1.5rem;">
-          <button class="btn btn-primary" id="btn-verify-ledger">
-            <span>Cryptographically Verify Entire Ledger Hash Chain</span>
-          </button>
-        </div>
+        <div id="ledger-verify-result"></div>
 
-        <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:0.75rem;">Recent Ledger Blocks</h2>
         <div class="table-container">
           <table>
             <thead>
               <tr>
                 <th>Seq #</th>
-                <th>Recorded At (UTC)</th>
                 <th>Receipt ID</th>
-                <th>Block Hash</th>
-                <th>Parent Hash</th>
+                <th>Entry Hash</th>
+                <th>Previous Hash (Binding)</th>
+                <th>Timestamp (UTC)</th>
               </tr>
             </thead>
-            <tbody id="ledger-entries-body">
-              ${(data.recent_entries || []).length === 0 ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2.5rem;">No blocks recorded in ledger.</td></tr>' : ''}
+            <tbody>
+              ${entries.length === 0 ? `
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2.5rem;">Ledger is empty.</td></tr>
+              ` : entries.map(e => `
+                <tr>
+                  <td class="mono" style="font-weight:700;">#${e.sequence_number}</td>
+                  <td>
+                    <span class="hash-chip" onclick="window.relayCopy('${e.receipt_id}', 'Receipt ID')">
+                      ${truncHash(e.receipt_id, 14)} ${icon('copy', 11)}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="mono" style="color:var(--color-allow);">${truncHash(e.entry_hash, 16)}</span>
+                  </td>
+                  <td>
+                    <span class="mono" style="color:var(--text-muted);">${truncHash(e.previous_hash, 16)}</span>
+                  </td>
+                  <td>${formatTs(e.timestamp)}</td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>
       `;
 
-      const tbody = document.getElementById('ledger-entries-body');
-      (data.recent_entries || []).forEach(e => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="mono"><strong>#${e.sequence_number}</strong></td>
-          <td class="mono">${formatTs(e.recorded_at)}</td>
-          <td class="mono">${escapeHtml(e.receipt_id)}</td>
-          <td class="mono" title="${escapeHtml(e.receipt_hash)}">${escapeHtml(truncHash(e.receipt_hash, 20))}</td>
-          <td class="mono" title="${escapeHtml(e.parent_receipt_hash)}">${escapeHtml(truncHash(e.parent_receipt_hash, 20))}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      document.getElementById('verify-ledger-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('verify-ledger-btn');
+        btn.disabled = true;
+        btn.innerHTML = `${icon('refresh', 13)} Verifying Hash Chain...`;
 
-      document.getElementById('btn-verify-ledger').addEventListener('click', async () => {
-        const banner = document.getElementById('ledger-verify-banner');
-        banner.innerHTML = '<div style="padding:1rem;color:var(--text-secondary)">Executing systematic offline ledger verification...</div>';
         try {
-          const res = await api('/api/v1/ledger/verify', { method: 'POST' });
-          if (res.is_valid) {
-            banner.innerHTML = `
-              <div class="verification-banner valid">
-                <div class="verification-icon">✓</div>
-                <div>
-                  <strong>LEDGER INTEGRITY VERIFIED</strong><br/>
-                  Verified ${res.total_verified_entries} blocks in ${res.duration_ms} ms. SHA-256 hash chains unbroken from genesis block.
+          const report = await api('/api/v1/ledger/verify');
+          const resBox = document.getElementById('ledger-verify-result');
+
+          if (report.is_valid) {
+            resBox.innerHTML = `
+              <div class="card" style="border-color:var(--color-allow);background:var(--color-allow-bg);margin-bottom:1.25rem;">
+                <div style="display:flex;align-items:center;gap:0.65rem;">
+                  <span style="color:var(--color-allow);display:flex;">${icon('check', 20)}</span>
+                  <div>
+                    <strong style="color:var(--color-allow);font-size:0.95rem;">Audit Ledger Hash Chain Cryptographically Verified</strong><br/>
+                    <span style="color:var(--text-secondary);font-size:0.825rem;">Verified ${report.head_sequence || 0} consecutive blocks in ${report.duration_ms || 0}ms without tamper detection.</span>
+                  </div>
                 </div>
               </div>
             `;
           } else {
-            banner.innerHTML = `
-              <div class="verification-banner invalid">
-                <div class="verification-icon">✗</div>
-                <div>
-                  <strong>CORRUPTION DETECTED IN LEDGER</strong><br/>
-                  ${escapeHtml(res.error_message || 'Hash chain mismatch detected.')}
+            resBox.innerHTML = `
+              <div class="card" style="border-color:var(--color-deny);background:var(--color-deny-bg);margin-bottom:1.25rem;">
+                <div style="display:flex;align-items:center;gap:0.65rem;">
+                  <span style="color:var(--color-deny);display:flex;">${icon('x', 20)}</span>
+                  <div>
+                    <strong style="color:var(--color-deny);font-size:0.95rem;">Tamper Alert: Ledger Verification Failure</strong><br/>
+                    <span style="color:var(--text-secondary);font-size:0.825rem;">${escapeHtml(report.error_message || 'Hash chain integrity violated!')}</span>
+                  </div>
                 </div>
               </div>
             `;
           }
-        } catch (e) {
-          banner.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Verification Failed: ${escapeHtml(e.message)}</div>`;
+        } catch (err) {
+          showToast(`Ledger verify failed: ${err.message}`, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `${icon('check', 13)} Verify Full Hash Chain`;
         }
       });
 
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading ledger: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading ledger: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // VIEW: Policies & Validator
+  // ===========================================================================
+  // VIEW: Policies (Cedar Engine & Interactive Validator)
+  // ===========================================================================
   async function renderPolicies() {
     const container = document.getElementById('view-container');
     try {
       const data = await api('/api/v1/policies');
-      const policyText = data.policy_text || '// Default bundled policies';
 
       container.innerHTML = `
         <div class="view-header">
           <div>
-            <h1 class="section-title">Cedar Security Policies</h1>
-            <p class="section-subtitle">Deterministic AWS Cedar authorization policies governing all tool invocations.</p>
+            <h1 class="section-title">${icon('layers', 22)} Cedar Authorization Policies</h1>
+            <p class="section-subtitle">Authoritative Cedar default-deny security policies enforcing strict schema conformity.</p>
           </div>
           <div class="toolbar-group">
-            <button class="btn btn-secondary btn-sm" id="btn-copy-digest" title="Copy Policy Digest">Copy Digest</button>
-            <button class="btn btn-primary btn-sm" id="btn-reload-policies">↺ Reload From Disk</button>
+            <span class="badge badge-allow mono">Default Deny Active</span>
+            <span class="hash-chip" onclick="window.relayCopy('${data.policy_digest}', 'Policy Digest')" title="Copy Policy Digest">
+              Digest: ${truncHash(data.policy_digest, 12)} ${icon('copy', 11)}
+            </span>
           </div>
         </div>
 
-        <div id="policy-alert"></div>
+        <div class="grid-3" style="margin-bottom:1.25rem;">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Tier 1: Read-Only</span>
+              <span class="badge badge-allow">Permit</span>
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
+              Queries, listings, and file content reads. Executed immediately without operator friction.
+            </div>
+          </div>
 
-        <div class="grid-3">
           <div class="card">
-            <div class="card-title">Policy Model</div>
-            <div class="card-value" style="color:var(--color-success)">Default Deny</div>
-            <div class="card-subtext">Explicit Permit Required</div>
+            <div class="card-header">
+              <span class="card-title">Tier 2: Mutation</span>
+              <span class="badge badge-approval">Approval Gated</span>
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
+              State writes, branch creations, database updates. Requires interactive step-up approval.
+            </div>
           </div>
+
           <div class="card">
-            <div class="card-title">Policy Digest <span class="badge badge-neutral" style="font-size:0.7rem;">SI-010</span></div>
-            <div class="card-value mono" style="font-size:1rem;line-height:2.2rem;" title="${escapeHtml(data.policy_digest)}">${escapeHtml(truncHash(data.policy_digest, 22))}</div>
-            <div class="card-subtext">Tamper Detection SHA-256</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Schema Version</div>
-            <div class="card-value">Cedar 4.0</div>
-            <div class="card-subtext">Strict Entity &amp; Action Conformity</div>
+            <div class="card-header">
+              <span class="card-title">Tier 3: Destructive & Sensitive</span>
+              <span class="badge badge-deny">Forbid / Mandatory</span>
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
+              Shell executions, drops, file removals, sensitive credential targets (<code class="mono">~/.ssh</code>, <code class="mono">.env</code>).
+            </div>
           </div>
         </div>
 
         <div class="card" style="margin-bottom:1.5rem;">
           <div class="card-header">
-            <span class="card-title">Active Cedar Policies</span>
-            <span class="badge badge-neutral" style="font-size:0.75rem;">${data.policy_count || 1} Policies Loaded</span>
+            <span class="card-title">Active Cedar Policy Rules</span>
+            <button class="btn btn-secondary btn-sm" onclick="window.relayCopy(\`${escapeHtml(data.policy_text).replace(/`/g, '\\`')}\`, 'Policy Text')">
+              ${icon('copy', 12)} Copy Policy Source
+            </button>
           </div>
-          <pre id="policy-display">${highlightCedar(policyText)}</pre>
+          <pre><code>${highlightCedar(data.policy_text)}</code></pre>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <span class="card-title">Test &amp; Validate Policy Syntax</span>
+            <span class="card-title">Interactive Cedar Policy Test Bench</span>
+            <span class="badge badge-brand mono">Validator</span>
           </div>
-          <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:0.75rem;">
-            Test prospective Cedar policy statements against Relay's Cedar schema before applying them.
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+            Test custom Cedar security policy syntax against Relay's compiled schema before saving to disk:
           </p>
-          <div class="filter-bar" style="margin-bottom:0.75rem;">
-            <select id="policy-template" class="select-filter" style="flex:0 0 auto;">
-              <option value="">— Insert Template —</option>
-              <option value="permit_all">permit(principal, action, resource);</option>
-              <option value="permit_tool">permit(principal, action == Action::"tool_name", resource);</option>
-              <option value="forbid_tool">forbid(principal, action == Action::"tool_name", resource);</option>
-              <option value="when_block">permit(principal, action, resource) when { context.approved == true };</option>
-            </select>
+          <textarea id="policy-test-input" class="search-input" style="width:100%;height:130px;font-family:var(--font-mono);font-size:0.85rem;margin-bottom:0.75rem;padding:0.75rem;" placeholder="permit(principal, action == Relay::Action::&quot;read_resource&quot;, resource);"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div id="policy-test-feedback"></div>
+            <button id="validate-policy-btn" class="btn btn-primary btn-sm">
+              ${icon('check', 13)} Validate Policy
+            </button>
           </div>
-          <textarea id="policy-test-input" class="auth-input" style="height:140px;font-family:var(--font-mono);font-size:0.85rem;" placeholder="permit(principal, action, resource) when { ... };"></textarea>
-          <div>
-            <button class="btn btn-primary btn-sm" id="btn-validate-policy">Validate Syntax</button>
-          </div>
-          <div id="policy-validation-result" style="margin-top:0.75rem;"></div>
         </div>
       `;
 
-      // Make the Cedar pre block not escape (highlightCedar returns HTML)
-      // We already set it via innerHTML in the template above
-
-      document.getElementById('btn-copy-digest').addEventListener('click', () => {
-        copyToClipboard(data.policy_digest || '', 'Policy Digest');
-      });
-
-      document.getElementById('btn-reload-policies').addEventListener('click', () => {
-        openModal({
-          title: 'Reload Cedar Policies',
-          body: `<p>This will atomically reload Cedar policies from disk and hot-swap the running policy engine.</p>
-                 <p style="color:var(--color-warning);margin-top:0.75rem;">⚠️ All governed actions will immediately use the new policy set.</p>`,
-          confirmText: 'Reload Policies',
-          confirmClass: 'btn-primary',
-          onConfirm: async () => {
-            const alertDiv = document.getElementById('policy-alert');
-            try {
-              const res = await api('/api/v1/policies/reload', { method: 'POST' });
-              showToast(`✓ Policies reloaded (${res.policy_count} active, digest: ${truncHash(res.policy_digest, 12)})`, 'success', 4000);
-              alertDiv.innerHTML = `
-                <div class="verification-banner valid">
-                  <div class="verification-icon">✓</div>
-                  <div>
-                    <strong>POLICIES RELOADED SUCCESSFULLY</strong><br/>
-                    New Policy Digest: <span class="mono">${escapeHtml(res.policy_digest)}</span> (${res.policy_count} policies active).
-                  </div>
-                </div>
-              `;
-              setTimeout(renderPolicies, 1500);
-            } catch (e) {
-              showToast('Policy reload failed: ' + e.message, 'error', 5000);
-              alertDiv.innerHTML = `
-                <div class="verification-banner invalid">
-                  <div class="verification-icon">✗</div>
-                  <div>
-                    <strong>POLICY RELOAD FAILED — ROLLED BACK</strong><br/>
-                    ${escapeHtml(e.message)}
-                  </div>
-                </div>
-              `;
-            }
-          }
-        });
-      });
-
-      document.getElementById('policy-template').addEventListener('change', (e) => {
-        const templates = {
-          permit_all: 'permit(principal, action, resource);',
-          permit_tool: 'permit(\n  principal,\n  action == Action::"tool_name",\n  resource\n);',
-          forbid_tool: 'forbid(\n  principal,\n  action == Action::"tool_name",\n  resource\n);',
-          when_block: 'permit(\n  principal,\n  action,\n  resource\n) when {\n  context.approved == true\n};',
-        };
-        if (e.target.value && templates[e.target.value]) {
-          document.getElementById('policy-test-input').value = templates[e.target.value];
-        }
-        e.target.value = '';
-      });
-
-      document.getElementById('btn-validate-policy').addEventListener('click', async () => {
-        const text = document.getElementById('policy-test-input').value;
-        const resDiv = document.getElementById('policy-validation-result');
-        if (!text.trim()) {
-          resDiv.innerHTML = '<span class="badge badge-warning">Please enter Cedar policy text to validate.</span>';
+      document.getElementById('validate-policy-btn').addEventListener('click', async () => {
+        const text = document.getElementById('policy-test-input').value.trim();
+        const fb = document.getElementById('policy-test-feedback');
+        if (!text) {
+          fb.innerHTML = `<span style="color:var(--color-approval);font-size:0.8rem;">Please enter policy text to validate.</span>`;
           return;
         }
-        resDiv.innerHTML = '<span style="color:var(--text-secondary)">Validating against Cedar schema...</span>';
+
         try {
           const res = await api('/api/v1/policies/validate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ policy_text: text }),
           });
+
           if (res.is_valid) {
-            resDiv.innerHTML = `<span class="badge badge-success" style="padding:0.5rem;">✓ VALID: Policy syntax conformant with Relay Cedar schema (${res.policy_count} policies detected).</span>`;
-            showToast('✓ Cedar policy syntax valid', 'success', 2500);
+            fb.innerHTML = `
+              <span class="badge badge-allow mono">
+                ${icon('check', 12)} VALID: ${res.policy_count || 1} rule(s) passed schema verification
+              </span>
+            `;
           } else {
-            resDiv.innerHTML = `<span class="badge badge-danger" style="padding:0.5rem;">✗ INVALID: ${escapeHtml(res.error || 'Validation error')}</span>`;
-            showToast('✗ Policy syntax invalid — check errors', 'warning', 3000);
+            fb.innerHTML = `
+              <span class="badge badge-deny mono">
+                ${icon('x', 12)} ${escapeHtml(res.error || 'Syntax or schema error')}
+              </span>
+            `;
           }
-        } catch (e) {
-          resDiv.innerHTML = `<span class="badge badge-danger" style="padding:0.5rem;">Error: ${escapeHtml(e.message)}</span>`;
+        } catch (err) {
+          fb.innerHTML = `<span style="color:var(--color-deny);font-size:0.8rem;">Validation error: ${escapeHtml(err.message)}</span>`;
         }
       });
 
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading policies: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading policies: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // VIEW: Security Posture & Sandbox
+  // ===========================================================================
+  // VIEW: Secrets Vault (Keyring & Authenticated Storage)
+  // ===========================================================================
+  async function renderSecrets() {
+    const container = document.getElementById('view-container');
+    try {
+      const data = await api('/api/v1/secrets');
+      const secrets = data.secrets || [];
+
+      container.innerHTML = `
+        <div class="view-header">
+          <div>
+            <h1 class="section-title">${icon('key', 22)} Keyring Secret Vault</h1>
+            <p class="section-subtitle">Zero-ambient credential vault backed by native OS Keyring with zeroized memory management.</p>
+          </div>
+          <div class="toolbar-group">
+            <span class="badge badge-neutral mono">Configured Secrets: ${secrets.length}</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1.25rem;">
+          <div class="card-header">
+            <span class="card-title">Vault Configuration & Storage</span>
+            <span class="badge badge-allow">${icon('lock', 12)} ZERO LEAKAGE</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;font-size:0.85rem;">
+            <div>
+              <span style="color:var(--text-secondary)">Keyring Service Namespace:</span><br/>
+              <span class="mono" style="font-weight:600;color:var(--text-primary);">io.relay.gateway</span>
+            </div>
+            <div>
+              <span style="color:var(--text-secondary)">Vault Storage Directory:</span><br/>
+              <span class="mono">${escapeHtml(data.vault_dir || '~/.relay')}</span>
+            </div>
+            <div>
+              <span style="color:var(--text-secondary)">Memory Isolation:</span><br/>
+              <span class="mono" style="color:var(--color-allow);">Zeroize-on-drop / Locked RAM</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="secret-search" class="search-input" placeholder="Search secret key alias or fingerprint..." />
+          <span style="font-size:0.8rem;color:var(--text-muted);">
+            Manage via CLI: <code class="mono" style="color:var(--text-primary)">relay secret set &lt;key&gt; &lt;val&gt;</code>
+          </span>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Key Alias</th>
+                <th>Storage Provider</th>
+                <th>Payload Size</th>
+                <th>SHA-256 Fingerprint</th>
+                <th>Masked Value</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="secrets-tbody"></tbody>
+          </table>
+        </div>
+      `;
+
+      function renderSecretList() {
+        const q = (document.getElementById('secret-search').value || '').toLowerCase();
+        const filtered = secrets.filter(s => {
+          if (!q) return true;
+          return (s.alias || '').toLowerCase().includes(q) || (s.fingerprint || '').toLowerCase().includes(q);
+        });
+
+        const tbody = document.getElementById('secrets-tbody');
+        if (filtered.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">
+                No secrets configured in vault.<br/>
+                <span style="font-size:0.78rem;">Use <code class="mono">relay secret set &lt;key&gt; &lt;value&gt;</code> to securely vault API tokens.</span>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(s => `
+          <tr>
+            <td><span class="mono" style="font-weight:600;">${escapeHtml(s.alias)}</span></td>
+            <td><span class="badge badge-brand">${escapeHtml(s.provider)}</span></td>
+            <td><span class="mono">${s.length} bytes</span></td>
+            <td>
+              <span class="hash-chip" onclick="window.relayCopy('${s.fingerprint}', 'Fingerprint')" title="Copy Fingerprint">
+                ${escapeHtml(s.fingerprint)} ${icon('copy', 11)}
+              </span>
+            </td>
+            <td><span class="mono" style="color:var(--text-muted);">[MASKED - ${s.length} bytes]</span></td>
+            <td>${formatTs(s.updated_at)}</td>
+          </tr>
+        `).join('');
+      }
+
+      document.getElementById('secret-search').addEventListener('input', renderSecretList);
+      renderSecretList();
+
+    } catch (err) {
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading secrets: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  // ===========================================================================
+  // VIEW: Security Invariants & Pipeline Architecture
+  // ===========================================================================
   async function renderSecurity() {
     const container = document.getElementById('view-container');
     try {
       const sec = await api('/api/v1/security');
 
       container.innerHTML = `
-        <h1 class="section-title">Security Posture & Trust Boundaries</h1>
-        <p class="section-subtitle">Formal trust boundaries, platform sandbox enforcement, and limitation transparency.</p>
+        <div class="view-header">
+          <div>
+            <h1 class="section-title">${icon('shield', 22)} Security Architecture & Invariants</h1>
+            <p class="section-subtitle">Formal trust boundaries, kernel sandbox mechanisms, and security invariants.</p>
+          </div>
+        </div>
 
         <div class="card" style="margin-bottom:1.5rem;">
-          <div class="card-title" style="margin-bottom:0.75rem;">Relay Zero-Trust Pipeline Architecture</div>
-          <pre style="line-height:1.4;">
-[ UNTRUSTED AGENT ] ── stdio (JSON-RPC) ──► [ TRUST BOUNDARY 1 ]
+          <div class="card-title" style="margin-bottom:0.75rem;">Relay Zero-Trust Pipeline Flow</div>
+          <pre><code>[ UNTRUSTED AGENT ] ── stdio (JSON-RPC) ──► [ TRUST BOUNDARY 1 ]
                                                   │
                                                   ▼
                                        ┌─────────────────────┐
@@ -1444,110 +1248,100 @@
                 ┌─────────────────────────────────┼─────────────────────────────────┐
                 ▼                                 ▼                                 ▼
    [ FILESYSTEM CONNECTOR ]           [ POSTGRES CONNECTOR ]             [ GITHUB CONNECTOR ]
-     Path Jail Enforcement              AST Read-Only Enforce             Loopback Egress Proxy
-          </pre>
+     Path Jail Enforcement              AST Read-Only Enforce             Loopback Egress Proxy</code></pre>
         </div>
 
         <div class="grid-2">
           <div class="card">
-            <div class="card-title">Platform Sandbox Limitations</div>
-            <div style="margin-top:0.75rem;font-size:0.9rem;line-height:1.6;">
-              <p><strong>Detected Host OS:</strong> <span class="mono">${escapeHtml(sec.target_os)}</span></p>
-              <p><strong>Enforcement Mode:</strong> <span class="badge ${sec.is_linux_netns ? 'badge-success' : 'badge-warning'}">${escapeHtml(sec.egress_mode)}</span></p>
-              <div style="margin-top:0.75rem;padding:0.75rem;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);">
+            <div class="card-title">Host Sandbox Enforcement</div>
+            <div style="margin-top:0.75rem;font-size:0.875rem;line-height:1.6;">
+              <p><strong>Host Platform:</strong> <span class="mono">${escapeHtml(sec.target_os)}</span></p>
+              <p><strong>Sandbox Mode:</strong> <span class="badge ${sec.is_linux_netns ? 'badge-allow' : 'badge-approval'}">${escapeHtml(sec.egress_mode)}</span></p>
+              <div style="margin-top:0.75rem;padding:0.75rem;background:var(--bg-surface);border-radius:4px;border:1px solid var(--border-subtle);">
                 ${sec.is_linux_netns ?
-                  '<strong>Linux Full Enforced:</strong> Unprivileged network namespaces isolate child subprocess network stacks completely from the host loopback and LAN.' :
-                  '<strong>Cooperative Proxy Mode:</strong> On macOS/Windows, raw socket containment relies on cooperative proxy configuration (HTTP_PROXY/HTTPS_PROXY). Kernel-level raw socket blocking is unavailable without root containerization.'}
+                  '<strong>Linux Kernel Namespaces:</strong> Unprivileged network namespaces isolate child subprocess network stacks completely from host network and LAN interfaces.' :
+                  '<strong>Cooperative Proxy Mode:</strong> On macOS/Windows, raw socket mediation relies on cooperative loopback proxying (HTTP_PROXY/HTTPS_PROXY).'}
               </div>
             </div>
           </div>
 
           <div class="card">
-            <div class="card-title">Key Security Invariants</div>
-            <ul style="margin-top:0.75rem;font-size:0.875rem;padding-left:1.25rem;color:var(--text-secondary);line-height:1.6;">
-              <li><strong style="color:var(--text-primary)">SI-001:</strong> Agent environment contains ZERO ambient target credentials.</li>
+            <div class="card-title">Core Security Invariants</div>
+            <ul style="margin-top:0.75rem;font-size:0.85rem;padding-left:1.25rem;color:var(--text-secondary);line-height:1.7;">
+              <li><strong style="color:var(--text-primary)">SI-001:</strong> Agent environment contains zero ambient target credentials.</li>
               <li><strong style="color:var(--text-primary)">SI-004:</strong> Every governed operation requires deterministic Cedar authorization.</li>
-              <li><strong style="color:var(--text-primary)">SI-008:</strong> Destructive operations require out-of-band /dev/tty confirmation.</li>
-              <li><strong style="color:var(--text-primary)">SI-011:</strong> Every action produces signed RFC 9598 DSSE Action Receipts.</li>
-              <li><strong style="color:var(--text-primary)">SI-014:</strong> Cryptographic audit ledger is immutable and hash-chained.</li>
+              <li><strong style="color:var(--text-primary)">SI-008:</strong> Destructive operations require out-of-band operator confirmation.</li>
+              <li><strong style="color:var(--text-primary)">SI-011:</strong> Every action produces a cryptographically signed DSSE Action Receipt.</li>
+              <li><strong style="color:var(--text-primary)">SI-014:</strong> Audit ledger is immutable, append-only, and hash-chained.</li>
             </ul>
           </div>
         </div>
       `;
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading security posture: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading security: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // VIEW: External Egress
+  // ===========================================================================
+  // VIEW: Egress & Anti-SSRF Protection
+  // ===========================================================================
   async function renderEgress() {
     const container = document.getElementById('view-container');
     try {
       const data = await api('/api/v1/egress');
 
       container.innerHTML = `
-        <h1 class="section-title">External MCP Egress & Anti-SSRF</h1>
-        <p class="section-subtitle">Mediation boundary for external network calls and cloud metadata access prevention.</p>
+        <div class="view-header">
+          <div>
+            <h1 class="section-title">${icon('shield', 22)} External Egress & Anti-SSRF Defense</h1>
+            <p class="section-subtitle">Mediation boundary preventing cloud metadata access, private LAN scanning, and DNS rebinding.</p>
+          </div>
+        </div>
 
         <div class="grid-3">
           <div class="card">
-            <div class="card-title">Proxy Status</div>
-            <div class="card-value" style="color:var(--color-success)">${escapeHtml(data.proxy_status || 'RUNNING')}</div>
+            <div class="card-title">Loopback Proxy</div>
+            <div class="card-value" style="color:var(--color-allow);">${escapeHtml(data.proxy_status || 'RUNNING')}</div>
             <div class="card-subtext">${escapeHtml(data.bind_addr || '127.0.0.1:Loopback')}</div>
           </div>
           <div class="card">
-            <div class="card-title">Active Proxy Sessions</div>
+            <div class="card-title">Active Proxy Leases</div>
             <div class="card-value">${data.active_sessions || 0}</div>
-            <div class="card-subtext">Short-lived JIT Leases</div>
+            <div class="card-subtext">Short-Lived JIT Leases</div>
           </div>
           <div class="card">
             <div class="card-title">Anti-SSRF Protection</div>
-            <div class="card-value" style="color:var(--color-success)">ACTIVE</div>
-            <div class="card-subtext">DNS Rebinding & Cloud Metadata Blocked</div>
+            <div class="card-value" style="color:var(--color-allow);">ACTIVE</div>
+            <div class="card-subtext">169.254.169.254 & RFC 1918 Blocked</div>
           </div>
         </div>
 
         <div class="card" style="margin-bottom:1.5rem;">
           <div class="card-title">Egress Protection Mechanisms</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;margin-top:0.75rem;font-size:0.875rem;">
-            <div style="padding:0.75rem;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);">
-              <strong>Cloud Metadata Protection</strong><br/>
-              <span style="color:var(--color-danger)">169.254.169.254</span> and link-local IPv6 ranges are hard-blocked by the DNS resolver.
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;margin-top:0.75rem;font-size:0.85rem;">
+            <div style="padding:0.75rem;background:var(--bg-surface);border-radius:4px;border:1px solid var(--border-subtle);">
+              <strong style="color:var(--color-deny);">Cloud Metadata Shield</strong><br/>
+              Requests to 169.254.169.254 and link-local IPv6 ranges are dropped immediately before connection.
             </div>
-            <div style="padding:0.75rem;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);">
-              <strong>DNS Rebinding Defense</strong><br/>
-              Hostnames resolving to private RFC 1918 / loopback ranges are blocked before socket connection.
+            <div style="padding:0.75rem;background:var(--bg-surface);border-radius:4px;border:1px solid var(--border-subtle);">
+              <strong style="color:var(--color-approval);">DNS Rebinding Mitigation</strong><br/>
+              Hostnames resolving to private RFC 1918 addresses are rejected during address resolution.
             </div>
-            <div style="padding:0.75rem;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);">
-              <strong>Header Sanitization</strong><br/>
-              Subprocesses cannot forge or overwrite Relay authentication headers during egress transit.
+            <div style="padding:0.75rem;background:var(--bg-surface);border-radius:4px;border:1px solid var(--border-subtle);">
+              <strong style="color:var(--color-allow);">Header Sanitization</strong><br/>
+              Subprocesses cannot forge Relay authorization headers or egress credentials in transit.
             </div>
           </div>
         </div>
-
-        <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:0.75rem;">Recent Blocked Egress Attempts</h2>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Time (UTC)</th>
-                <th>Target Destination</th>
-                <th>Blocked Reason</th>
-                <th>Policy Rule</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(data.blocked_attempts || []).length === 0 ? '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem;">No blocked egress attempts detected.</td></tr>' : ''}
-            </tbody>
-          </table>
-        </div>
       `;
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading egress: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading egress: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // VIEW: Connectors
+  // ===========================================================================
+  // VIEW: Tool Connectors
+  // ===========================================================================
   async function renderConnectors() {
     const container = document.getElementById('view-container');
     try {
@@ -1555,87 +1349,159 @@
       const connectors = data.connectors || [];
 
       container.innerHTML = `
-        <h1 class="section-title">Tool Connectors</h1>
-        <p class="section-subtitle">In-process native connectors and subprocess adapters governed by Relay.</p>
+        <div class="view-header">
+          <div>
+            <h1 class="section-title">${icon('layers', 22)} Governed Connectors</h1>
+            <p class="section-subtitle">Native in-process connectors and subprocess execution adapters governed by Relay.</p>
+          </div>
+        </div>
 
         <div class="grid-2">
           ${connectors.map(c => `
             <div class="card">
               <div class="card-header">
                 <span class="card-title">${escapeHtml(c.name)}</span>
-                <span class="badge ${c.is_available ? 'badge-success' : 'badge-neutral'}">${c.is_available ? 'AVAILABLE' : 'OFFLINE'}</span>
+                <span class="badge ${c.is_available ? 'badge-allow' : 'badge-neutral'}">
+                  ${c.is_available ? icon('check', 11) + ' AVAILABLE' : 'OFFLINE'}
+                </span>
               </div>
               <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:0.75rem;">${escapeHtml(c.description)}</p>
-              <div style="font-size:0.85rem;line-height:1.6;color:var(--text-muted);">
-                <div>Security Mode: <span class="mono" style="color:var(--text-primary)">${escapeHtml(c.security_mode)}</span></div>
-                <div>Isolation: <span class="mono" style="color:var(--text-primary)">${escapeHtml(c.isolation)}</span></div>
-                <div>Credential Injection: <span class="mono" style="color:var(--text-primary)">${escapeHtml(c.credential_mode)}</span></div>
+              <div style="font-size:0.8rem;line-height:1.7;color:var(--text-muted);">
+                <div>Security Mode: <span class="mono" style="color:var(--text-primary);">${escapeHtml(c.security_mode)}</span></div>
+                <div>Isolation: <span class="mono" style="color:var(--text-primary);">${escapeHtml(c.isolation)}</span></div>
+                <div>Credential Injection: <span class="mono" style="color:var(--text-primary);">${escapeHtml(c.credential_mode)}</span></div>
               </div>
             </div>
           `).join('')}
         </div>
       `;
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading connectors: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading connectors: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // VIEW: Doctor (System Health)
+  // ===========================================================================
+  // VIEW: Doctor (Diagnostics)
+  // ===========================================================================
   async function renderDoctor() {
     const container = document.getElementById('view-container');
     try {
       const doc = await api('/api/v1/doctor');
 
       container.innerHTML = `
-        <h1 class="section-title">System Health & Foundation Diagnostics</h1>
-        <p class="section-subtitle">Canonical status checks shared directly with 'relay doctor'.</p>
+        <div class="view-header">
+          <div>
+            <h1 class="section-title">${icon('terminal', 22)} System Health Diagnostics</h1>
+            <p class="section-subtitle">Canonical system health diagnostics matching <code class="mono">relay doctor</code> output.</p>
+          </div>
+          <div class="toolbar-group">
+            <span class="badge ${doc.is_healthy ? 'badge-allow' : 'badge-deny'} mono">
+              ${doc.is_healthy ? icon('check', 12) + ' HEALTHY' : icon('x', 12) + ' ATTENTION REQUIRED'}
+            </span>
+          </div>
+        </div>
 
         <div class="card" style="margin-bottom:1.5rem;">
           <div class="card-header">
-            <span class="card-title">Diagnostic Summary</span>
-            <span class="badge ${doc.is_healthy ? 'badge-success' : 'badge-danger'}">${doc.is_healthy ? 'HEALTHY' : 'NEEDS ATTENTION'}</span>
+            <span class="card-title">Foundation Report</span>
+            <span class="badge badge-neutral mono">${escapeHtml(doc.relay_version)}</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;font-size:0.875rem;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;font-size:0.85rem;">
             <div>
-              <span style="color:var(--text-secondary)">Relay Version:</span><br/>
-              <span class="mono" style="font-size:0.95rem;">${escapeHtml(doc.relay_version)}</span>
-            </div>
-            <div>
-              <span style="color:var(--text-secondary)">Platform / Architecture:</span><br/>
-              <span class="mono" style="font-size:0.95rem;">${escapeHtml(doc.target_os)} (${escapeHtml(doc.target_arch)})</span>
+              <span style="color:var(--text-secondary)">Platform / Target:</span><br/>
+              <span class="mono">${escapeHtml(doc.target_os)} (${escapeHtml(doc.target_arch)})</span>
             </div>
             <div>
               <span style="color:var(--text-secondary)">Working Directory:</span><br/>
-              <span class="mono" style="font-size:0.85rem;">${escapeHtml(doc.working_directory)}</span>
+              <span class="mono">${escapeHtml(doc.working_directory)}</span>
             </div>
             <div>
-              <span style="color:var(--text-secondary)">Config Directory:</span><br/>
-              <span class="mono" style="font-size:0.85rem;">${escapeHtml(doc.config_directory)} [${doc.config_directory_exists ? 'EXISTS' : 'NOT CREATED'}]</span>
-            </div>
-            <div>
-              <span style="color:var(--text-secondary)">Ledger Database:</span><br/>
-              <span class="mono" style="font-size:0.85rem;">${escapeHtml(doc.ledger_path)} [${doc.ledger_exists ? 'EXISTS' + (doc.ledger_permissions ? ' mode ' + doc.ledger_permissions : '') : 'NOT CREATED'}]</span>
-            </div>
-            <div>
-              <span style="color:var(--text-secondary)">Policy Directory:</span><br/>
-              <span class="mono" style="font-size:0.85rem;">${escapeHtml(doc.policy_directory)} [${doc.policy_directory_exists ? 'EXISTS' : 'BUNDLED DEFAULT'}]</span>
+              <span style="color:var(--text-secondary)">Ledger File Status:</span><br/>
+              <span class="mono">${escapeHtml(doc.ledger_path)} [${doc.ledger_exists ? 'EXISTS' : 'NOT INITIALIZED'}]</span>
             </div>
             <div>
               <span style="color:var(--text-secondary)">Controlling Terminal (/dev/tty):</span><br/>
-              <span class="badge ${doc.tty_available ? 'badge-success' : 'badge-warning'}">${doc.tty_available ? 'INTERACTIVE TTY AVAILABLE' : 'HEADLESS / FAIL-CLOSED'}</span>
+              <span class="badge ${doc.tty_available ? 'badge-allow' : 'badge-approval'}">
+                ${doc.tty_available ? 'INTERACTIVE /DEV/TTY' : 'HEADLESS / FAIL-CLOSED'}
+              </span>
             </div>
             <div>
-              <span style="color:var(--text-secondary)">Egress Sandbox Mode:</span><br/>
-              <span class="badge badge-info">${escapeHtml(doc.egress_sandbox_mode)}</span>
+              <span style="color:var(--text-secondary)">Sandbox Egress Mode:</span><br/>
+              <span class="badge badge-brand">${escapeHtml(doc.egress_sandbox_mode)}</span>
             </div>
           </div>
         </div>
       `;
     } catch (err) {
-      container.innerHTML = `<div class="badge badge-danger" style="padding:1rem;display:block;">Error loading diagnostics: ${escapeHtml(err.message)}</div>`;
+      container.innerHTML = `<div class="badge badge-deny" style="padding:1rem;display:block;">Error loading diagnostics: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  // Kickoff authentication on page load
+  // ===========================================================================
+  // INSPECT ACTION MODAL (Tabbed In-Toto DSSE Viewer)
+  // ===========================================================================
+  async function inspectAction(actionId) {
+    try {
+      const data = await api(`/api/v1/activity/${actionId}`);
+      const act = data.action;
+
+      const body = `
+        <div class="tabs">
+          <button class="tab-btn active" onclick="window.relaySwitchTab('tab-summary')">Summary</button>
+          <button class="tab-btn" onclick="window.relaySwitchTab('tab-proposal')">Canonical Proposal</button>
+          <button class="tab-btn" onclick="window.relaySwitchTab('tab-receipt')">In-Toto Receipt</button>
+        </div>
+
+        <div id="tab-summary" class="tab-pane">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.75rem;margin-bottom:1rem;font-size:0.85rem;">
+            <div><span style="color:var(--text-secondary);">Tool Name:</span><br/><strong class="mono">${escapeHtml(act.tool_name)}</strong></div>
+            <div><span style="color:var(--text-secondary);">Decision:</span><br/><span class="badge ${act.decision === 'ALLOW' ? 'badge-allow' : 'badge-deny'}">${escapeHtml(act.decision)}</span></div>
+            <div><span style="color:var(--text-secondary);">Action Hash:</span><br/><span class="mono">${truncHash(act.action_hash, 16)}</span></div>
+            <div><span style="color:var(--text-secondary);">Sequence #:</span><br/><span class="mono">#${act.sequence_number}</span></div>
+          </div>
+          <div>
+            <span style="color:var(--text-secondary);font-size:0.8rem;display:block;margin-bottom:0.35rem;">Resource Target:</span>
+            <pre><code>${escapeHtml(act.resource || '-')}</code></pre>
+          </div>
+        </div>
+
+        <div id="tab-proposal" class="tab-pane" style="display:none;">
+          <pre><code>${escapeHtml(JSON.stringify(act.proposal || {}, null, 2))}</code></pre>
+        </div>
+
+        <div id="tab-receipt" class="tab-pane" style="display:none;">
+          <pre><code>${escapeHtml(JSON.stringify(act.receipt || {}, null, 2))}</code></pre>
+        </div>
+      `;
+
+      openModal({
+        title: `${icon('shield', 18)} Action Inspection: ${escapeHtml(act.tool_name)}`,
+        body,
+        footer: `
+          <button class="btn btn-secondary btn-sm" onclick="window.relayCopy(\`${escapeHtml(JSON.stringify(act, null, 2)).replace(/`/g, '\\`')}\`, 'Action Detail')">
+            ${icon('copy', 12)} Copy Full JSON
+          </button>
+          <button class="btn btn-secondary" onclick="window.relayCloseModal()">Close</button>
+        `
+      });
+
+    } catch (err) {
+      showToast(`Failed to inspect action: ${err.message}`, 'error');
+    }
+  }
+
+  // Global window bridge for inline event handlers
+  window.relayCopy = copyToClipboard;
+  window.relayInspect = inspectAction;
+  window.relayCloseModal = closeModal;
+  window.relaySwitchTab = function (tabId) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+    if (event && event.target) event.target.classList.add('active');
+  };
+
+  // Launch on page load
   window.addEventListener('DOMContentLoaded', initAuth);
 })();

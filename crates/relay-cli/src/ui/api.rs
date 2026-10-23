@@ -537,6 +537,30 @@ pub async fn handle_api_request(
             Ok((200, "application/json", serde_json::to_vec(&resp).unwrap()))
         }
 
+        ("GET", "/api/v1/secrets") => {
+            let vault_dir = crate::secret_cmd::resolve_vault_dir();
+            let index_path = vault_dir.join("secrets_index.json");
+            let secrets: Vec<crate::secret_cmd::SecretMetadata> =
+                if let Ok(content) = std::fs::read_to_string(&index_path) {
+                    if let Ok(idx) =
+                        serde_json::from_str::<crate::secret_cmd::SecretVaultIndex>(&content)
+                    {
+                        idx.secrets.into_values().collect()
+                    } else {
+                        Vec::new()
+                    }
+                } else {
+                    Vec::new()
+                };
+
+            let resp = json!({
+                "count": secrets.len(),
+                "vault_dir": vault_dir.display().to_string(),
+                "secrets": secrets,
+            });
+            Ok((200, "application/json", serde_json::to_vec(&resp).unwrap()))
+        }
+
         ("POST", "/api/v1/policies/validate") => {
             let req: PolicyValidateReq = serde_json::from_slice(body)
                 .map_err(|e| (400, format!("{{\"error\":\"Invalid JSON: {e}\"}}")))?;
