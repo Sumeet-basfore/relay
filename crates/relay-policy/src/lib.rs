@@ -11,10 +11,15 @@
 pub mod engine;
 pub mod loader;
 pub mod mapping;
+pub mod scaffold;
 pub mod schema;
 
 pub use cedar_policy;
 pub use engine::CedarPolicyEngine;
 pub use loader::{PolicyLoader, RELAY_DEFAULT_POLICIES};
 pub use mapping::map_authorization_request;
+pub use scaffold::{
+    classify_tool, generate_and_validate_bundle, generate_cedar_policy, generate_cedar_schema,
+    ToolDefinition, ToolTier,
+};
 pub use schema::{default_schema, load_schema_from_file, parse_schema, RELAY_DEFAULT_SCHEMA};

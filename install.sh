@@ -52,10 +52,14 @@ elif [ -f "./dist/${TARBALL}" ]; then
     if [ -f "./dist/SHA256SUMS" ]; then
         cp "./dist/SHA256SUMS" "${TMP_DIR}/"
     fi
-elif [ -f \"./target/release/relay\" ]; then
+elif [ -f "./target/release/relay" ]; then
     echo "Using compiled release binary ./target/release/relay"
     mkdir -p "${TMP_DIR}/${ARCHIVE_NAME}"
     cp "./target/release/relay" "${TMP_DIR}/${ARCHIVE_NAME}/"
+elif [ -f "./target/debug/relay" ]; then
+    echo "Using compiled debug binary ./target/debug/relay"
+    mkdir -p "${TMP_DIR}/${ARCHIVE_NAME}"
+    cp "./target/debug/relay" "${TMP_DIR}/${ARCHIVE_NAME}/"
 else
     # Resolve 'latest' version tag from GitHub Releases API
     if [ "${VERSION}" = "latest" ] || [ "${VERSION}" = "0.1.0" ]; then

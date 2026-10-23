@@ -3,7 +3,7 @@ use clap::Parser;
 use relay_cli::cli::{Cli, Commands, PolicySubcommands, SecretSubcommands};
 use relay_cli::cli_error::CliError;
 use relay_cli::config::RelayConfig;
-use relay_cli::{doctor, logging, receipt_cmd, run, ui_cmd, verify_cmd};
+use relay_cli::{doctor, logging, policy_scaffold, receipt_cmd, run, ui_cmd, verify_cmd};
 
 #[tokio::main]
 async fn main() {
@@ -40,8 +40,26 @@ async fn run_app(cli: Cli, config: RelayConfig) -> Result<(), CliError> {
         }
         Commands::Policy(args) => match args.command {
             PolicySubcommands::Validate { path } => {
-                let schema = relay_policy::schema::default_schema()
-                    .map_err(|e| CliError::ExecutionError(e.to_string()))?;
+                let schema = match &path {
+                    Some(p) => {
+                        let schema_path = if p.is_dir() {
+                            p.join("schema.cedarschema")
+                        } else if let Some(parent) = p.parent() {
+                            parent.join("schema.cedarschema")
+                        } else {
+                            std::path::PathBuf::from("schema.cedarschema")
+                        };
+                        if schema_path.exists() {
+                            relay_policy::schema::load_schema_from_file(&schema_path)
+                                .map_err(|e| CliError::ExecutionError(e.to_string()))?
+                        } else {
+                            relay_policy::schema::default_schema()
+                                .map_err(|e| CliError::ExecutionError(e.to_string()))?
+                        }
+                    }
+                    None => relay_policy::schema::default_schema()
+                        .map_err(|e| CliError::ExecutionError(e.to_string()))?,
+                };
                 let (policies, digest): (
                     relay_policy::cedar_policy::PolicySet,
                     relay_domain::Digest,
@@ -73,6 +91,17 @@ async fn run_app(cli: Cli, config: RelayConfig) -> Result<(), CliError> {
                 Err(CliError::NotImplemented(
                     "relay policy test is scheduled for a future milestone".to_string(),
                 ))
+            }
+            PolicySubcommands::Scaffold {
+                output,
+                from_json,
+                dry_run,
+                force,
+                env,
+                command,
+            } => {
+                policy_scaffold::execute(output, from_json, dry_run, force, env, command).await?;
+                Ok(())
             }
         },
         Commands::Secret(args) => match args.command {

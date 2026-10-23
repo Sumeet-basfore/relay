@@ -238,7 +238,19 @@ relay secret set gh_token "ghp_xxxxxxxxxxxx"
 relay secret list
 ```
 
-### 4. Validate Cedar Policies
+### 4. Scaffold & Validate Cedar Policies
+Auto-generate strongly-typed Cedar schemas (`schema.cedarschema`) and default-deny policies (`policy.cedar`) directly from an MCP server or JSON tool definition with automatic semantic operation tiering and universal sensitive path defense (`~/.ssh`, `~/.aws`, `.env`, `/etc/shadow`):
+```bash
+# Auto-scaffold by querying a live MCP server over stdio
+relay policy scaffold --output ./policies -- npx -y @modelcontextprotocol/server-filesystem /path/to/dir
+
+# Or scaffold from a static JSON tools declaration
+relay policy scaffold --from-json ./tools.json --output ./policies
+
+# Preview generated schema and policies without writing files
+relay policy scaffold --from-json ./tools.json --dry-run
+```
+
 Validate Cedar policy syntax and schema consistency:
 ```bash
 relay policy validate --path ./policies

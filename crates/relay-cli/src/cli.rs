@@ -94,6 +94,32 @@ pub enum PolicySubcommands {
         #[arg(short, long)]
         fixtures: Option<PathBuf>,
     },
+    /// Auto-scaffold Cedar security policies from an MCP server or JSON schema
+    Scaffold {
+        /// Output directory for generated policy and schema
+        #[arg(short, long, default_value = "./policies")]
+        output: PathBuf,
+
+        /// Path to static JSON file containing tool definitions
+        #[arg(long = "from-json")]
+        from_json: Option<PathBuf>,
+
+        /// Print generated policy and schema to stdout without writing files
+        #[arg(long = "dry-run")]
+        dry_run: bool,
+
+        /// Overwrite destination files if directory exists
+        #[arg(short, long)]
+        force: bool,
+
+        /// Pass environment variables to target MCP server (e.g. GITHUB_TOKEN=val)
+        #[arg(long = "env")]
+        env: Vec<String>,
+
+        /// MCP server command and arguments to launch and query
+        #[arg(last = true)]
+        command: Vec<String>,
+    },
 }
 
 #[derive(Args, Debug)]
