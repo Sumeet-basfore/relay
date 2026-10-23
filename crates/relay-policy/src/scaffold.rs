@@ -129,9 +129,7 @@ pub fn classify_tool(tool: &ToolDefinition) -> ToolTier {
 
 /// Normalizes a tool name into a valid Cedar action identifier.
 pub fn sanitize_action_name(name: &str) -> String {
-    name.replace([':', '/'], ".")
-        .trim_matches('.')
-        .to_string()
+    name.replace([':', '/'], ".").trim_matches('.').to_string()
 }
 
 /// Generates a Cedar schema in `.cedarschema` format for the provided MCP tools.

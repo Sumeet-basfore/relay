@@ -1,9 +1,11 @@
 use clap::Parser;
 
-use relay_cli::cli::{Cli, Commands, PolicySubcommands, SecretSubcommands};
+use relay_cli::cli::{Cli, Commands, PolicySubcommands};
 use relay_cli::cli_error::CliError;
 use relay_cli::config::RelayConfig;
-use relay_cli::{doctor, logging, policy_scaffold, receipt_cmd, run, ui_cmd, verify_cmd};
+use relay_cli::{
+    doctor, logging, policy_scaffold, receipt_cmd, run, secret_cmd, ui_cmd, verify_cmd,
+};
 
 #[tokio::main]
 async fn main() {
@@ -104,32 +106,10 @@ async fn run_app(cli: Cli, config: RelayConfig) -> Result<(), CliError> {
                 Ok(())
             }
         },
-        Commands::Secret(args) => match args.command {
-            SecretSubcommands::Set { key, .. } => {
-                tracing::info!(key = %key, "Setting secret in keyring");
-                Err(CliError::NotImplemented(
-                    "relay secret set is scheduled for a future milestone".to_string(),
-                ))
-            }
-            SecretSubcommands::Get { key } => {
-                tracing::info!(key = %key, "Querying secret in keyring");
-                Err(CliError::NotImplemented(
-                    "relay secret get is scheduled for a future milestone".to_string(),
-                ))
-            }
-            SecretSubcommands::List => {
-                tracing::info!("Listing secrets in keyring");
-                Err(CliError::NotImplemented(
-                    "relay secret list is scheduled for a future milestone".to_string(),
-                ))
-            }
-            SecretSubcommands::Delete { key } => {
-                tracing::info!(key = %key, "Deleting secret from keyring");
-                Err(CliError::NotImplemented(
-                    "relay secret delete is scheduled for a future milestone".to_string(),
-                ))
-            }
-        },
+        Commands::Secret(args) => {
+            secret_cmd::execute(args.command, cli.json).await?;
+            Ok(())
+        }
         Commands::Verify(args) => {
             tracing::info!(from_seq = ?args.from_seq, "Verifying SQLite ledger chain");
             verify_cmd::execute(args, cli.json, &config.storage.ledger_path)?;

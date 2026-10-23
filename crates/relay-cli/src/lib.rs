@@ -8,6 +8,7 @@ pub mod logging;
 pub mod policy_scaffold;
 pub mod receipt_cmd;
 pub mod run;
+pub mod secret_cmd;
 pub mod ui;
 pub mod ui_cmd;
 pub mod verify_cmd;
