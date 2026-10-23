@@ -12,18 +12,19 @@ curl -fsSL https://raw.githubusercontent.com/Sumeet-basfore/relay/main/install.s
 
 | Platform | Archive |
 |----------|---------|
-| Linux x86_64 | `relay-vX.Y.Z-linux-x86_64.tar.gz` |
-| Linux aarch64 | `relay-vX.Y.Z-linux-aarch64.tar.gz` |
-| macOS Intel | `relay-vX.Y.Z-macos-x86_64.tar.gz` |
-| macOS Apple Silicon | `relay-vX.Y.Z-macos-aarch64.tar.gz` |
-| Windows x86_64 | `relay-vX.Y.Z-windows-x86_64.zip` |
+| Linux x86_64 | `relay-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz` |
+| Linux aarch64 | `relay-vX.Y.Z-aarch64-unknown-linux-gnu.tar.gz` |
+| macOS Intel | `relay-vX.Y.Z-x86_64-apple-darwin.tar.gz` |
+| macOS Apple Silicon | `relay-vX.Y.Z-aarch64-apple-darwin.tar.gz` |
+| Windows x86_64 | `relay-vX.Y.Z-x86_64-pc-windows-msvc.zip` |
 
 ### Quick start
 
 ```bash
-relay doctor          # Verify installation
-relay ui              # Open local security console
-relay mcp run <name>  # Run a governed MCP connector
+relay doctor                  # Verify installation & sandbox health
+relay policy scaffold --dry-run -- <mcp-server-command>  # Auto-scaffold Cedar policies
+relay run -- <mcp-server-command>                        # Run governed with default deny
+relay ui                      # Open local security console
 ```
 
 ### Verify checksums
