@@ -54,8 +54,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@v1
+      - name: Security & License Audit
+        uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
           arguments: --all-features
