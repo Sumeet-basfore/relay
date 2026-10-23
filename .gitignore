@@ -1,5 +1,7 @@
 # Marketing & Social Media (never push to GitHub)
 marketing/
+brag-output/
+repo-to-post-output/
 
 # Rust build artifacts
 /target
@@ -11,6 +13,7 @@ marketing/
 *.db-shm
 
 # Agent & IDE metadata
+.agents/
 .serena/
 .vscode/
 .idea/
